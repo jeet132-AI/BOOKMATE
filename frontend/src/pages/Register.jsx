@@ -39,6 +39,11 @@ function Register() {
       return;
     }
 
+    if (formData.password.length < 6) {
+      setMessage("Password must be at least 6 characters");
+      return;
+    }
+
     try {
       const response = await fetch(
         "http://localhost:5000/api/auth/register",
@@ -230,9 +235,10 @@ function Register() {
               <input
                 type="password"
                 name="password"
-                placeholder="Password"
+                placeholder="Password (min 6 characters)"
                 value={formData.password}
                 onChange={handleChange}
+                minLength={6}
                 required
               />
             </div>

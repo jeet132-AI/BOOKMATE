@@ -13,9 +13,30 @@ const registerUser = async (req, res) => {
       });
     }
 
+    const cleanEmail = String(email).trim().toLowerCase();
+    const cleanName = String(name).trim();
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      return res.status(400).json({
+        message: "Please enter a valid email address",
+      });
+    }
+
+    if (cleanName.length < 2) {
+      return res.status(400).json({
+        message: "Name must be at least 2 characters",
+      });
+    }
+
+    if (String(password).length < 6) {
+      return res.status(400).json({
+        message: "Password must be at least 6 characters",
+      });
+    }
+
     const existingUser = await pool.query(
       "SELECT id FROM users WHERE email = $1",
-      [email]
+      [cleanEmail]
     );
 
     if (existingUser.rows.length > 0) {
@@ -30,7 +51,7 @@ const registerUser = async (req, res) => {
       `INSERT INTO users (name, email, password)
        VALUES ($1, $2, $3)
        RETURNING id, name, email, role, created_at`,
-      [name, email, hashedPassword]
+      [cleanName, cleanEmail, hashedPassword]
     );
 
     res.status(201).json({
@@ -59,7 +80,7 @@ const loginUser = async (req, res) => {
 
     const result = await pool.query(
       "SELECT * FROM users WHERE email = $1",
-      [email]
+      [String(email).trim().toLowerCase()]
     );
 
     if (result.rows.length === 0) {
