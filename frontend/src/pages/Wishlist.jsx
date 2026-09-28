@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { frontImage } from "../utils/bookImage";
 import "./Wishlist.css";
 
 function Wishlist() {
@@ -270,7 +271,7 @@ function Wishlist() {
                 <div className="wishlist-image-wrapper">
                   {item.image_url ? (
                     <img
-                      src={item.image_url}
+                      src={frontImage(item)}
                       alt={
                         item.product_title ||
                         "Book"

@@ -1,13 +1,18 @@
 import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import useTheme from "../hooks/useTheme";
+import { useCart } from "../context/CartContext";
 import "./Navbar.css";
 
 function Navbar() {
   const navigate = useNavigate();
 
-  const [darkMode, setDarkMode] = useState(
-    () => localStorage.getItem("theme") === "dark"
-  );
+  const { darkMode, toggleTheme } = useTheme();
+  const { count } = useCart();
+
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const closeMenu = () => setMenuOpen(false);
 
   const [scrolled, setScrolled] = useState(false);
 
@@ -25,25 +30,37 @@ function Navbar() {
   const user = JSON.parse(localStorage.getItem("user") || "null");
   const isLoggedIn = Boolean(token && user);
 
-  useEffect(() => {
-    const theme = darkMode ? "dark" : "light";
-    document.documentElement.dataset.theme = theme;
-    localStorage.setItem("theme", theme);
-  }, [darkMode]);
-
   function handleLogout() {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    closeMenu();
     navigate("/");
   }
 
   return (
     <nav className={scrolled ? "navbar scrolled" : "navbar"}>
-      <NavLink to="/" className="navbar-logo">
+      <NavLink
+        to="/"
+        className="navbar-logo"
+        onClick={closeMenu}
+      >
         USED BOOK MARKET
       </NavLink>
 
-      <div className="nav-links">
+      <button
+        type="button"
+        className="menu-toggle"
+        onClick={() => setMenuOpen((open) => !open)}
+        aria-label={menuOpen ? "Close menu" : "Open menu"}
+        aria-expanded={menuOpen}
+      >
+        {menuOpen ? "✕" : "☰"}
+      </button>
+
+      <div
+        className={menuOpen ? "nav-links open" : "nav-links"}
+        onClick={closeMenu}
+      >
         {!isLoggedIn && (
           <>
             <NavLink
@@ -64,6 +81,19 @@ function Navbar() {
               About
             </NavLink>
 
+            <span className="nav-login-hint">
+              <span
+                className="nav-pointing-hand"
+                aria-hidden="true"
+              >
+                👉
+              </span>
+
+              <span className="nav-hint-bubble">
+                Login here!
+              </span>
+            </span>
+
             <NavLink
               to="/login"
               className={({ isActive }) =>
@@ -81,6 +111,21 @@ function Navbar() {
             >
               Register
             </NavLink>
+
+            <NavLink
+              to="/cart"
+              className={({ isActive }) =>
+                isActive ? "nav-link active cart-link" : "nav-link cart-link"
+              }
+              aria-label={`Cart, ${count} items`}
+            >
+              🛒
+              {count > 0 && (
+                <span className="cart-count-badge">
+                  {count}
+                </span>
+              )}
+            </NavLink>
           </>
         )}
 
@@ -95,6 +140,18 @@ function Navbar() {
             <NavLink to="/wishlist" className="nav-link">Wishlist</NavLink>
             <NavLink to="/profile" className="nav-link">Profile</NavLink>
 
+            <NavLink
+              to="/cart"
+              className="nav-link cart-link"
+              aria-label={`Cart, ${count} items`}
+            >
+              🛒
+              {count > 0 && (
+                <span className="cart-count-badge">
+                  {count}
+                </span>
+              )}
+            </NavLink>
             <button
               type="button"
               className="nav-logout-button"
@@ -118,7 +175,10 @@ function Navbar() {
         <button
           type="button"
           className="theme-toggle"
-          onClick={() => setDarkMode((current) => !current)}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleTheme();
+          }}
           aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
           aria-pressed={darkMode}
         >

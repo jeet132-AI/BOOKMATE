@@ -1,7 +1,102 @@
 const pool = require("../db");
 
 
-// Calculate platform fee and buyer price
+// Delivery charge comes from the latest pricing settings.
+const getDeliveryCharge = async () => {
+  const result = await pool.query(
+    `SELECT
+       delivery_charge
+     FROM pricing_settings
+     ORDER BY id DESC
+     LIMIT 1`
+  );
+
+  if (result.rows.length === 0) {
+    return 0;
+  }
+
+  const charge =
+    result.rows[0].delivery_charge;
+
+  return charge === null
+    ? 0
+    : Number(charge);
+};
+
+
+// Resolve the full price for a book:
+// Book price (seller + platform fee) + delivery charge = total.
+const resolvePricing = async (
+  sellerPrice,
+  category
+) => {
+  const deliveryCharge =
+    await getDeliveryCharge();
+
+  if (
+    category &&
+    String(category).trim()
+  ) {
+    const ruleResult = await pool.query(
+      `SELECT
+         fee_type,
+         fee_value
+        FROM category_pricing_rules
+        WHERE LOWER(category) = LOWER($1)
+        AND is_active = TRUE
+        LIMIT 1`,
+      [String(category).trim()]
+    );
+
+    if (ruleResult.rows.length > 0) {
+      const rule = ruleResult.rows[0];
+
+      const feeValue = Number(
+        rule.fee_value
+      );
+
+      const platformFee =
+        rule.fee_type === "percentage"
+          ? (sellerPrice * feeValue) / 100
+          : feeValue;
+
+      return {
+        platformFee,
+
+        deliveryCharge,
+
+        buyerPrice:
+          sellerPrice +
+          platformFee +
+          deliveryCharge,
+
+        rule:
+          "category:" +
+          String(category).trim(),
+      };
+    }
+  }
+
+  const pricing = await calculatePricing(
+    sellerPrice
+  );
+
+  return {
+    ...pricing,
+
+    deliveryCharge,
+
+    buyerPrice:
+      sellerPrice +
+      pricing.platformFee +
+      deliveryCharge,
+
+    rule: "global",
+  };
+};
+
+
+// Calculate platform fee and buyer price (global rule)
 const calculatePricing = async (sellerPrice) => {
   const pricingResult = await pool.query(
     `SELECT
@@ -51,6 +146,7 @@ const createProduct = async (
       description,
       category,
       condition,
+      class_name,
       seller_price,
       location,
     } = req.body;
@@ -105,6 +201,55 @@ const createProduct = async (
     }
 
 
+    // Enforce admin-configured price limits
+    const limitsResult = await pool.query(
+      `SELECT
+         min_seller_price,
+         max_seller_price
+        FROM pricing_settings
+        ORDER BY id DESC
+        LIMIT 1`
+    );
+
+    if (limitsResult.rows.length > 0) {
+      const minPrice =
+        limitsResult.rows[0].min_seller_price ===
+        null
+          ? null
+          : Number(
+              limitsResult.rows[0]
+                .min_seller_price
+            );
+
+      const maxPrice =
+        limitsResult.rows[0].max_seller_price ===
+        null
+          ? null
+          : Number(
+              limitsResult.rows[0]
+                .max_seller_price
+            );
+
+      if (
+        minPrice !== null &&
+        sellerPrice < minPrice
+      ) {
+        return res.status(400).json({
+          message: `Seller price must be at least ₹${minPrice}`,
+        });
+      }
+
+      if (
+        maxPrice !== null &&
+        sellerPrice > maxPrice
+      ) {
+        return res.status(400).json({
+          message: `Seller price cannot be more than ₹${maxPrice}`,
+        });
+      }
+    }
+
+
     // Create product
 
     const result = await pool.query(
@@ -115,12 +260,13 @@ const createProduct = async (
          description,
          category,
          condition,
+         class_name,
          seller_price,
          location,
          status
        )
        VALUES
-       ($1, $2, $3, $4, $5, $6, $7, 'pending')
+       ($1, $2, $3, $4, $5, $6, $7, $8, 'pending')
        RETURNING *`,
       [
         req.user.id,
@@ -134,6 +280,10 @@ const createProduct = async (
         category.trim(),
 
         condition.trim(),
+
+        class_name
+          ? String(class_name).trim() || null
+          : null,
 
         sellerPrice,
 
@@ -252,6 +402,7 @@ const getMyProducts = async (
          p.description,
          p.category,
          p.condition,
+         p.class_name,
          p.seller_price,
          p.status,
          p.location,
@@ -300,6 +451,16 @@ const getApprovedProducts = async (
 ) => {
   try {
 
+    const { class: classFilter } = req.query;
+
+    const values = [];
+    let classClause = "";
+
+    if (classFilter && classFilter !== "All") {
+      values.push(String(classFilter));
+      classClause = `AND p.class_name = $1`;
+    }
+
     const result = await pool.query(
       `SELECT
          p.id,
@@ -307,6 +468,7 @@ const getApprovedProducts = async (
          p.description,
          p.category,
          p.condition,
+         p.class_name,
          p.seller_price,
          p.location,
          p.created_at,
@@ -320,7 +482,19 @@ const getApprovedProducts = async (
            WHERE pi.product_id = p.id
            ORDER BY pi.created_at ASC
            LIMIT 1
-         ) AS image_url
+         ) AS image_url,
+
+         (
+           SELECT ROUND(AVG(r.rating), 1)
+           FROM reviews r
+           WHERE r.product_id = p.id
+         ) AS avg_rating,
+
+         (
+           SELECT COUNT(*)
+           FROM reviews r
+           WHERE r.product_id = p.id
+         ) AS review_count
 
        FROM products p
 
@@ -328,8 +502,10 @@ const getApprovedProducts = async (
          ON p.seller_id = u.id
 
        WHERE p.status = 'approved'
+       ${classClause}
 
-       ORDER BY p.created_at DESC`
+       ORDER BY p.created_at DESC`,
+      values
     );
 
 
@@ -345,8 +521,9 @@ const getApprovedProducts = async (
 
 
             const pricing =
-              await calculatePricing(
-                sellerPrice
+              await resolvePricing(
+                sellerPrice,
+                product.category
               );
 
 
@@ -358,6 +535,9 @@ const getApprovedProducts = async (
 
               platform_fee:
                 pricing.platformFee,
+
+              delivery_charge:
+                pricing.deliveryCharge,
 
               buyer_price:
                 pricing.buyerPrice,
@@ -403,6 +583,7 @@ const getProductById = async (
          p.description,
          p.category,
          p.condition,
+         p.class_name,
          p.seller_price,
          p.location,
          p.status,
@@ -418,7 +599,10 @@ const getProductById = async (
          ON p.seller_id = u.id
 
        WHERE p.id = $1
-       AND p.status = 'approved'`,
+       AND p.status IN (
+         'approved',
+         'sold'
+       )`,
       [id]
     );
 
@@ -443,8 +627,9 @@ const getProductById = async (
 
 
     const pricing =
-      await calculatePricing(
-        sellerPrice
+      await resolvePricing(
+        sellerPrice,
+        product.category
       );
 
 
@@ -470,6 +655,9 @@ const getProductById = async (
 
         platform_fee:
           pricing.platformFee,
+
+        delivery_charge:
+          pricing.deliveryCharge,
 
         buyer_price:
           pricing.buyerPrice,
@@ -499,4 +687,5 @@ module.exports = {
   getApprovedProducts,
   getProductById,
   calculatePricing,
+  resolvePricing,
 };

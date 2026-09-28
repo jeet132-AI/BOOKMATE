@@ -15,13 +15,22 @@ import Orders from "./pages/Orders";
 import Listings from "./pages/Listings";
 import Wishlist from "./pages/Wishlist";
 import Reviews from "./pages/Reviews";
+import Category from "./pages/Category";
+import Cart from "./pages/Cart";
 import SellAgain from "./pages/SellAgain";
 import ProductImages from "./pages/ProductImages";
 import ProtectedRoute from "./components/ProtectedRoute";
 import HoliCursor from "./HoliCursor";
+import useTheme from "./hooks/useTheme";
+import { CartProvider } from "./context/CartContext";
 
 function App() {
+  // Applies the saved theme (default: light) to every route,
+  // including Login/Register which render without a Navbar.
+  useTheme();
+
   return (
+    <CartProvider>
     <BrowserRouter>
       <HoliCursor />
 
@@ -143,6 +152,24 @@ function App() {
         />
 
         <Route
+          path="/cart"
+          element={
+            <MainLayout>
+              <Cart />
+            </MainLayout>
+          }
+        />
+
+        <Route
+          path="/category/:name"
+          element={
+            <MainLayout>
+              <Category />
+            </MainLayout>
+          }
+        />
+
+        <Route
           path="/sell-again/:productId"
           element={
             <ProtectedRoute>
@@ -165,6 +192,7 @@ function App() {
         />
       </Routes>
     </BrowserRouter>
+    </CartProvider>
   );
 }
 

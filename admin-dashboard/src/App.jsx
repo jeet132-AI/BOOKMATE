@@ -14,6 +14,7 @@ import AdminPayouts from "./pages/AdminPayouts";
 import AdminCategories from "./pages/AdminCategories";
 import AdminReports from "./pages/AdminReports";
 import AdminPricing from "./pages/AdminPricing";
+import AdminReviews from "./pages/AdminReviews";
 
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 
@@ -104,6 +105,13 @@ function App() {
                   <Route
                     path="/reports"
                     element={<AdminReports />}
+                  />
+
+
+                  {/* Buyer Reviews */}
+                  <Route
+                    path="/reviews"
+                    element={<AdminReviews />}
                   />
 
 

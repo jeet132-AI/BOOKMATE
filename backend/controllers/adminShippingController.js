@@ -18,6 +18,7 @@ const getAllShipping = async (req, res) => {
          o.product_id,
          o.buyer_price,
          o.status AS order_status,
+         o.delivery_address,
 
          p.title AS product_title,
 
@@ -80,6 +81,7 @@ const getShippingById = async (req, res) => {
          o.product_id,
          o.buyer_price,
          o.status AS order_status,
+         o.delivery_address,
 
          p.title AS product_title,
 
@@ -167,11 +169,25 @@ const updateShipping = async (req, res) => {
     const shippingResult =
       await client.query(
         `SELECT
-           id,
-           order_id,
-           shipping_status
-         FROM shipping
-         WHERE id = $1
+           s.id,
+           s.order_id,
+           s.shipping_status,
+           s.tracking_number,
+           s.courier_name,
+           o.buyer_id,
+           o.product_id,
+           o.status AS order_status,
+           p.seller_id,
+           p.title AS product_title,
+           buyer.name AS buyer_name
+         FROM shipping s
+         JOIN orders o
+           ON s.order_id = o.id
+         JOIN products p
+           ON o.product_id = p.id
+         JOIN users buyer
+           ON o.buyer_id = buyer.id
+         WHERE s.id = $1
          FOR UPDATE`,
         [id]
       );
@@ -191,6 +207,33 @@ const updateShipping = async (req, res) => {
     const newStatus =
       shipping_status ||
       shipping.shipping_status;
+
+    const nextTracking =
+      tracking_number?.trim() ||
+      shipping.tracking_number ||
+      null;
+
+    const nextCourier =
+      courier_name?.trim() ||
+      shipping.courier_name ||
+      null;
+
+    // A shipment cannot move without courier + tracking details —
+    // the buyer tracks the order with these on My Orders.
+    if (
+      ["shipped", "in_transit", "delivered"].includes(
+        newStatus
+      ) &&
+      (!nextTracking || !nextCourier)
+    ) {
+      await client.query("ROLLBACK");
+
+      return res.status(400).json({
+        message:
+          "Courier name and tracking number are required before marking a shipment as " +
+          newStatus,
+      });
+    }
 
     const result = await client.query(
       `UPDATE shipping
@@ -270,6 +313,20 @@ const updateShipping = async (req, res) => {
          WHERE id = $1`,
         [shipping.order_id]
       );
+
+      // Cash collected on delivery — settle COD payments
+      await client.query(
+        `UPDATE payments
+         SET payment_status = 'paid',
+             paid_at = COALESCE(
+               paid_at,
+               CURRENT_TIMESTAMP
+             )
+         WHERE order_id = $1
+         AND payment_status = 'pending'
+         AND payment_method = 'Cash on Delivery'`,
+        [shipping.order_id]
+      );
     }
 
     if (newStatus === "cancelled") {
@@ -289,6 +346,74 @@ const updateShipping = async (req, res) => {
            'processing'
          )`,
         [shipping.order_id]
+      );
+
+      // Refund prepaid (UPI) payments
+      await client.query(
+        `UPDATE payments
+         SET payment_status = 'refunded'
+         WHERE order_id = $1
+         AND payment_status = 'paid'`,
+        [shipping.order_id]
+      );
+
+      // Book goes back on sale
+      await client.query(
+        `UPDATE products
+         SET status = 'approved'
+         WHERE id = $1`,
+        [shipping.product_id]
+      );
+    }
+
+    // Keep buyer + seller informed — same messages as
+    // the order-status path so My Orders is never stale
+    const buyerMessages = {
+      shipped:
+        `Your order #${shipping.order_id} for "${shipping.product_title}" has been shipped via ${nextCourier} (Tracking: ${nextTracking}).`,
+      in_transit:
+        `Your order #${shipping.order_id} for "${shipping.product_title}" is in transit via ${nextCourier} (Tracking: ${nextTracking}).`,
+      delivered:
+        `Your order #${shipping.order_id} for "${shipping.product_title}" has been delivered. Enjoy your book! You can now leave a review.`,
+      cancelled:
+        `Your order #${shipping.order_id} for "${shipping.product_title}" has been cancelled.`,
+    };
+
+    if (buyerMessages[newStatus]) {
+      await client.query(
+        `INSERT INTO notifications
+         (
+           user_id,
+           title,
+           message
+         )
+         VALUES
+         ($1, $2, $3)`,
+        [
+          shipping.buyer_id,
+          "Order Status Updated",
+          buyerMessages[newStatus],
+        ]
+      );
+
+      await client.query(
+        `INSERT INTO notifications
+         (
+           user_id,
+           title,
+           message
+         )
+         VALUES
+         (
+           $1,
+           $2,
+           $3
+         )`,
+        [
+          shipping.seller_id,
+          "Order Status Updated",
+          `Order #${shipping.order_id} for "${shipping.product_title}" is now ${newStatus}.`,
+        ]
       );
     }
 

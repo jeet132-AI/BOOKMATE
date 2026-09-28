@@ -14,6 +14,7 @@ CREATE TABLE products (
     description TEXT,
     category VARCHAR(100) NOT NULL,
     condition VARCHAR(50) NOT NULL,
+    class_name VARCHAR(50),
     seller_price DECIMAL(10, 2) NOT NULL,
     status VARCHAR(30) DEFAULT 'pending',
     location VARCHAR(200),
@@ -45,6 +46,7 @@ CREATE TABLE orders (
     seller_price DECIMAL(10, 2) NOT NULL,
     platform_fee DECIMAL(10, 2) NOT NULL,
     buyer_price DECIMAL(10, 2) NOT NULL,
+    delivery_charge DECIMAL(10, 2) DEFAULT 0,
 
     status VARCHAR(30) DEFAULT 'pending',
 
@@ -130,6 +132,7 @@ CREATE TABLE categories (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) UNIQUE NOT NULL,
     description TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE reports (
@@ -213,5 +216,19 @@ CREATE TABLE pricing_settings (
     fee_type VARCHAR(20) NOT NULL DEFAULT 'fixed',
     fee_value DECIMAL(10, 2) NOT NULL DEFAULT 0,
 
+    min_seller_price DECIMAL(10, 2),
+    max_seller_price DECIMAL(10, 2),
+    delivery_charge DECIMAL(10, 2) DEFAULT 40,
+
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE category_pricing_rules (
+    id SERIAL PRIMARY KEY,
+    category VARCHAR(100) UNIQUE NOT NULL,
+    fee_type VARCHAR(20) NOT NULL DEFAULT 'fixed',
+    fee_value DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

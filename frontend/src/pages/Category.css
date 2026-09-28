@@ -1,0 +1,225 @@
+/* =========================================
+   CATEGORY — COMING SOON PAGE
+========================================= */
+
+.category-page {
+  position: relative;
+  min-height: calc(100vh - 80px);
+  padding: 70px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      circle at 10% 10%,
+      rgba(20, 184, 166, 0.1),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 90% 80%,
+      rgba(249, 115, 22, 0.08),
+      transparent 30%
+    ),
+    linear-gradient(
+      135deg,
+      #f8fffe,
+      #f4fbfa 50%,
+      #fffaf5
+    );
+  color: #16343a;
+}
+
+.coming-soon-card {
+  position: relative;
+  z-index: 2;
+  max-width: 560px;
+  width: 100%;
+  padding: 50px 40px;
+  text-align: center;
+  border: 1px solid #e0ebef;
+  border-radius: 28px;
+  background: #ffffff;
+  box-shadow: 0 30px 80px rgba(12, 33, 40, 0.14);
+  animation: comingSoonIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes comingSoonIn {
+  from {
+    opacity: 0;
+    transform: translateY(35px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.coming-soon-icon {
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 26px;
+  background: linear-gradient(135deg, #e5f7f1, #fff4e8);
+  border: 1px solid #d4e5ec;
+  font-size: 50px;
+  animation: comingSoonFloat 3.5s ease-in-out infinite;
+}
+
+@keyframes comingSoonFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.coming-soon-label {
+  margin: 0 0 8px;
+  color: #0f766e;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+.coming-soon-card h1 {
+  margin: 0 0 16px;
+  color: #153f5c;
+  font-size: clamp(34px, 5vw, 48px);
+  letter-spacing: -1px;
+}
+
+.coming-soon-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: rgba(249, 115, 22, 0.1);
+  border: 1px solid rgba(249, 115, 22, 0.35);
+  color: #ea580c;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.coming-soon-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #f97316;
+  animation: comingSoonBlink 1.4s ease-in-out infinite;
+}
+
+@keyframes comingSoonBlink {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.5);
+  }
+  50% {
+    opacity: 0.5;
+    box-shadow: 0 0 0 6px rgba(249, 115, 22, 0);
+  }
+}
+
+.coming-soon-text {
+  margin: 0 0 28px;
+  color: #61767b;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.coming-soon-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.coming-soon-actions a {
+  text-decoration: none;
+}
+
+.coming-soon-primary,
+.coming-soon-secondary {
+  min-height: 50px;
+  padding: 0 22px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: 0.25s ease;
+}
+
+.coming-soon-primary {
+  border: none;
+  background: #14b8a6;
+  color: #ffffff;
+}
+
+.coming-soon-primary:hover {
+  background: #0f766e;
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(20, 184, 166, 0.3);
+}
+
+.coming-soon-secondary {
+  border: 1px solid #d4e5ec;
+  background: transparent;
+  color: #0f766e;
+}
+
+.coming-soon-secondary:hover {
+  border-color: #14b8a6;
+  transform: translateY(-3px);
+}
+
+.coming-soon-home {
+  display: inline-block;
+  margin-top: 22px;
+  color: #61767b;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.coming-soon-home:hover {
+  color: #0f766e;
+}
+
+@media (max-width: 600px) {
+  .category-page {
+    padding: 40px 16px;
+  }
+
+  .coming-soon-card {
+    padding: 36px 22px;
+  }
+
+  .coming-soon-actions {
+    flex-direction: column;
+  }
+
+  .coming-soon-actions a,
+  .coming-soon-primary,
+  .coming-soon-secondary {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .coming-soon-card,
+  .coming-soon-icon,
+  .coming-soon-dot {
+    animation: none;
+  }
+}

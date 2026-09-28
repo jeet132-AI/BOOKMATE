@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
+import useTheme from "../hooks/useTheme";
 import "./Register.css";
 
 function Register() {
+  const { darkMode, toggleTheme } = useTheme();
   const [lampOn, setLampOn] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -80,6 +82,15 @@ function Register() {
 
   return (
     <main className="register-scene">
+      <button
+        type="button"
+        className="page-theme-toggle"
+        onClick={toggleTheme}
+        aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+        aria-pressed={darkMode}
+      >
+        {darkMode ? "☀️ Light" : "🌙 Dark"}
+      </button>
 
       {/* Background decoration */}
       <div className="register-glow glow-one"></div>

@@ -1,11 +1,19 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { frontImage } from "../utils/bookImage";
+import { useCart } from "../context/CartContext";
+import {
+  CLASS_OPTIONS,
+  classShortLabel,
+} from "../data/classes";
 import "./Books.css";
 
 function Books() {
+  const { addToCart, isInCart } = useCart();
   const [books, setBooks] = useState([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
+  const [selectedClass, setSelectedClass] = useState("All");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -52,13 +60,24 @@ function Books() {
       book.title?.toLowerCase().includes(searchText) ||
       (book.description || "").toLowerCase().includes(searchText) ||
       (book.category || "").toLowerCase().includes(searchText) ||
+      (book.class_name || "").toLowerCase().includes(searchText) ||
       (book.seller_name || "").toLowerCase().includes(searchText);
 
     const matchesCategory =
       category === "All" || book.category === category;
 
-    return matchesSearch && matchesCategory;
+    const matchesClass =
+      selectedClass === "All" ||
+      book.class_name === selectedClass;
+
+    return matchesSearch && matchesCategory && matchesClass;
   });
+
+  const resetFilters = () => {
+    setSearch("");
+    setCategory("All");
+    setSelectedClass("All");
+  };
 
   return (
     <main className="books-page">
@@ -90,6 +109,10 @@ function Books() {
         <div className="books-header-line"></div>
 
       </section>
+
+      {/* Search + class sections stay fixed on top while
+          the book list scrolls below (Flipkart style) */}
+      <div className="books-sticky-top">
 
       {/* Search and Filter */}
       <section className="books-toolbar">
@@ -134,15 +157,55 @@ function Books() {
         <button
           type="button"
           className="clear-btn"
-          onClick={() => {
-            setSearch("");
-            setCategory("All");
-          }}
+          onClick={resetFilters}
         >
           ↻ Clear
         </button>
 
       </section>
+
+      {/* Class sections — small buttons, all visible in one row */}
+      <section className="class-section">
+
+        <p className="class-section-label">
+          Browse by class
+        </p>
+
+        <div className="class-buttons">
+
+          <button
+            type="button"
+            className={
+              selectedClass === "All"
+                ? "class-btn active"
+                : "class-btn"
+            }
+            onClick={() => setSelectedClass("All")}
+          >
+            All
+          </button>
+
+          {CLASS_OPTIONS.map((option) => (
+            <button
+              key={option}
+              type="button"
+              className={
+                selectedClass === option
+                  ? "class-btn active"
+                  : "class-btn"
+              }
+              onClick={() => setSelectedClass(option)}
+              title={option}
+            >
+              {classShortLabel(option)}
+            </button>
+          ))}
+
+        </div>
+
+      </section>
+
+      </div>{/* books-sticky-top */}
 
       {/* Error Message */}
       {message && (
@@ -184,10 +247,7 @@ function Books() {
           <button
             type="button"
             className="empty-reset-button"
-            onClick={() => {
-              setSearch("");
-              setCategory("All");
-            }}
+            onClick={resetFilters}
           >
             Show All Books
           </button>
@@ -241,7 +301,7 @@ function Books() {
 
                   {book.image_url ? (
                     <img
-                      src={book.image_url}
+                      src={frontImage(book)}
                       alt={book.title}
                     />
                   ) : (
@@ -263,6 +323,12 @@ function Books() {
                   <div className="book-category">
                     {book.category || "General"}
                   </div>
+
+                  {book.class_name && (
+                    <div className="book-class-chip">
+                      🎓 {book.class_name}
+                    </div>
+                  )}
 
                   <h2 className="book-title">
                     {book.title}
@@ -344,6 +410,21 @@ function Books() {
                       ↗
                     </span>
                   </Link>
+
+                  <button
+                    type="button"
+                    className={
+                      isInCart(book.id)
+                        ? "add-cart-btn added"
+                        : "add-cart-btn"
+                    }
+                    onClick={() => addToCart(book.id, book.seller_id)}
+                    disabled={isInCart(book.id)}
+                  >
+                    {isInCart(book.id)
+                      ? "✓ In Cart"
+                      : "🛒 Add to Cart"}
+                  </button>
 
                 </div>
 

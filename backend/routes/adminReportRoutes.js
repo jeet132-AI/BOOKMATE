@@ -6,11 +6,20 @@ const adminMiddleware = require("../middleware/adminMiddleware");
 const {
   getAllReports,
   getReportById,
+  getPerformanceStats,
   updateReportStatus,
   deleteReport,
 } = require("../controllers/adminReportController");
 
 const router = express.Router();
+
+// Marketplace performance analytics (before "/:id")
+router.get(
+  "/stats",
+  authMiddleware,
+  adminMiddleware,
+  getPerformanceStats
+);
 
 // Get all reports
 router.get(

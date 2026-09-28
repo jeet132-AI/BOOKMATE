@@ -1,0 +1,312 @@
+/* =========================================
+   REVIEWS PAGE (Flipkart-style buyer reviews)
+========================================= */
+
+.reviews-page {
+  position: relative;
+  min-height: calc(100vh - 80px);
+  padding: 55px 7% 70px;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      circle at 10% 10%,
+      rgba(20, 184, 166, 0.1),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 90% 80%,
+      rgba(249, 115, 22, 0.08),
+      transparent 30%
+    ),
+    linear-gradient(
+      135deg,
+      #f8fffe,
+      #f4fbfa 50%,
+      #fffaf5
+    );
+  color: #16343a;
+}
+
+.reviews-header {
+  max-width: 1000px;
+  margin: 0 auto 25px;
+  text-align: center;
+}
+
+.reviews-label {
+  margin: 0 0 8px;
+  color: #0f766e;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+.reviews-header h1 {
+  margin: 0;
+  color: #153f5c;
+  font-size: clamp(32px, 4vw, 48px);
+  letter-spacing: -1px;
+}
+
+.reviews-header h1 span {
+  color: #0f766e;
+}
+
+.reviews-book-card {
+  max-width: 1000px;
+  margin: 0 auto 20px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  border: 1px solid #e0ebef;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 15px 40px rgba(19, 65, 70, 0.08);
+}
+
+.reviews-book-photo {
+  width: 72px;
+  height: 88px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: #f2f7f7;
+  font-size: 34px;
+  overflow: hidden;
+}
+
+.reviews-book-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.reviews-book-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.reviews-book-info h2 {
+  margin: 0 0 6px;
+  color: #153f5c;
+  font-size: 20px;
+}
+
+.reviews-summary {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #61767b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.reviews-avg {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #15803d;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.reviews-view-book {
+  flex-shrink: 0;
+  color: #0f766e;
+  font-size: 14px;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.reviews-view-book:hover {
+  text-decoration: underline;
+}
+
+.reviews-message {
+  max-width: 1000px;
+  margin: 0 auto 20px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #c2410c;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.reviews-layout {
+  max-width: 1000px;
+  margin: auto;
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.reviews-form-card,
+.reviews-list-card {
+  padding: 24px;
+  border: 1px solid #e0ebef;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 15px 40px rgba(19, 65, 70, 0.08);
+}
+
+.reviews-form-card h2,
+.reviews-list-card h2 {
+  margin: 0 0 8px;
+  color: #153f5c;
+  font-size: 20px;
+}
+
+.reviews-form-card > p,
+.reviews-list-card > p {
+  margin: 0 0 16px;
+  color: #61767b;
+  font-size: 13px;
+}
+
+.reviews-form-card label {
+  display: block;
+  margin-bottom: 14px;
+  color: #153f5c;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.reviews-form-card select,
+.reviews-form-card textarea {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid #d4e5ec;
+  border-radius: 11px;
+  background: #ffffff;
+  color: #16343a;
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.reviews-form-card select:focus,
+.reviews-form-card textarea:focus {
+  border-color: #14b8a6;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.12);
+}
+
+.reviews-submit-button {
+  width: 100%;
+  min-height: 48px;
+  border: none;
+  border-radius: 12px;
+  background: #14b8a6;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: 0.25s ease;
+}
+
+.reviews-submit-button:hover:not(:disabled) {
+  background: #0f766e;
+  transform: translateY(-2px);
+}
+
+.reviews-submit-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.reviews-list {
+  display: grid;
+  gap: 14px;
+}
+
+.review-item {
+  padding: 16px;
+  border: 1px solid #e2edf1;
+  border-radius: 14px;
+  background: #fbfdfe;
+}
+
+.review-item-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.review-stars {
+  color: #f59e0b;
+  letter-spacing: 1px;
+  font-size: 14px;
+}
+
+.review-item-top strong {
+  color: #153f5c;
+  font-size: 14px;
+}
+
+.review-comment {
+  margin: 0 0 8px;
+  color: #36545a;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.review-item small {
+  color: #91a3a7;
+  font-size: 11px;
+}
+
+.reviews-error-card {
+  max-width: 550px;
+  margin: 80px auto;
+  padding: 45px;
+  border: 1px solid #e0ebef;
+  border-radius: 25px;
+  background: #ffffff;
+  text-align: center;
+}
+
+.reviews-error-card h1 {
+  color: #153f5c;
+}
+
+.reviews-error-card p {
+  color: #61767b;
+}
+
+.reviews-error-card button {
+  margin-top: 15px;
+  padding: 12px 22px;
+  border: none;
+  border-radius: 10px;
+  background: #14b8a6;
+  color: #ffffff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+@media (max-width: 850px) {
+  .reviews-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .reviews-book-card {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 600px) {
+  .reviews-page {
+    padding: 40px 18px;
+  }
+}

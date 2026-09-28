@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import "./AdminDashboard.css";
+import { Link } from "react-router-dom";
+import "../components/AdminPanels.css";
 
 function AdminDashboard() {
   const [products, setProducts] = useState([]);
@@ -105,352 +106,189 @@ function AdminDashboard() {
       user.role === "user"
   ).length;
 
+  const stats = [
+    {
+      icon: "👥",
+      label: "TOTAL USERS",
+      value: totalUsers,
+      to: "/users",
+    },
+    {
+      icon: "👤",
+      label: "NORMAL USERS",
+      value: normalUsers,
+      to: "/users",
+    },
+    {
+      icon: "🛡️",
+      label: "ADMIN USERS",
+      value: adminUsers,
+      to: "/users",
+    },
+    {
+      icon: "📚",
+      label: "TOTAL PRODUCTS",
+      value: totalProducts,
+      to: "/products",
+    },
+    {
+      icon: "⏳",
+      label: "PENDING",
+      value: pendingProducts,
+      to: "/products/pending",
+    },
+    {
+      icon: "✅",
+      label: "APPROVED",
+      value: approvedProducts,
+      to: "/products",
+    },
+    {
+      icon: "❌",
+      label: "REJECTED",
+      value: rejectedProducts,
+      to: "/products",
+    },
+  ];
+
+  const sections = [
+    {
+      icon: "⏳",
+      label: "PENDING PRODUCTS",
+      desc: "Approve or reject new listings",
+      to: "/products/pending",
+    },
+    {
+      icon: "📦",
+      label: "ORDERS",
+      desc: "Confirm, ship and deliver orders",
+      to: "/orders",
+    },
+    {
+      icon: "🚚",
+      label: "SHIPPING",
+      desc: "Couriers, tracking and delivery",
+      to: "/shipping",
+    },
+    {
+      icon: "💰",
+      label: "PAYOUTS",
+      desc: "Pay sellers after delivery",
+      to: "/payouts",
+    },
+    {
+      icon: "💳",
+      label: "PAYMENTS",
+      desc: "Monitor buyer payments",
+      to: "/payments",
+    },
+    {
+      icon: "⭐",
+      label: "REVIEWS",
+      desc: "Buyer ratings and reports",
+      to: "/reviews",
+    },
+    {
+      icon: "🗂️",
+      label: "CATEGORIES",
+      desc: "Book categories and status",
+      to: "/categories",
+    },
+    {
+      icon: "📊",
+      label: "REPORTS",
+      desc: "Performance and abuse reports",
+      to: "/reports",
+    },
+    {
+      icon: "⚙️",
+      label: "PRICING",
+      desc: "Fees, limits and delivery charge",
+      to: "/pricing",
+    },
+  ];
+
   return (
-    <main className="admin-dashboard">
+    <main className="ap-page">
+      <section className="ap-header">
+        <div className="ap-header-icon">🏠</div>
 
-      {/* BACKGROUND */}
-      <div className="admin-bg admin-bg-one"></div>
-      <div className="admin-bg admin-bg-two"></div>
+        <p className="ap-label">
+          ADMIN CONTROL CENTER
+        </p>
 
+        <h1>
+          Admin <span>Dashboard</span>
+        </h1>
 
-      {/* HEADER */}
-      <section className="admin-header">
+        <p>
+          Manage users, books and marketplace
+          activity from one place.
+        </p>
 
-        <div className="admin-header-icon">
-          ⚙️
-        </div>
-
-        <div>
-          <p className="admin-label">
-            ADMIN CONTROL CENTER
-          </p>
-
-          <h1>
-            Admin <span>Dashboard</span>
-          </h1>
-
-          <p className="admin-description">
-            Manage users, books and marketplace
-            activity from one place.
-          </p>
-        </div>
-
+        <div className="ap-header-line"></div>
       </section>
 
-
-      {/* MESSAGE */}
       {message && (
-        <div className="admin-message">
+        <div className="ap-message">
           <span>⚠️</span>
           {message}
         </div>
       )}
 
-
-      {/* LOADING */}
       {loading ? (
-        <section className="admin-loading">
-
-          <div className="admin-loader">
-            ⚙️
-          </div>
-
+        <div className="ap-loading">
+          <div className="ap-spinner"></div>
           <h2>
             Loading Admin Dashboard...
           </h2>
-
           <p>
             Fetching marketplace information
           </p>
-
-        </section>
+        </div>
       ) : (
         <>
-
-
-          {/* USER STATISTICS */}
-          <section className="admin-section">
-
-            <div className="section-heading">
-              <div>
-                <span>
-                  USER MANAGEMENT
-                </span>
-
-                <h2>
-                  👥 User Statistics
-                </h2>
-              </div>
-
-              <div className="section-badge">
-                LIVE DATA
-              </div>
-            </div>
-
-
-            <div className="admin-grid">
-
-              <div className="admin-card blue-card">
-                <div className="card-icon">
-                  👥
+          <section className="ap-summary">
+            {stats.map((stat) => (
+              <Link
+                key={stat.label}
+                to={stat.to}
+                className="ap-stat-link"
+              >
+                <div className="ap-stat">
+                  <span>{stat.icon}</span>
+                  <small>{stat.label}</small>
+                  <strong>{stat.value}</strong>
                 </div>
-
-                <div className="card-info">
-                  <p>Total Users</p>
-                  <h3>{totalUsers}</h3>
-                </div>
-
-                <div className="card-decoration">
-                  👤
-                </div>
-              </div>
-
-
-              <div className="admin-card teal-card">
-                <div className="card-icon">
-                  👤
-                </div>
-
-                <div className="card-info">
-                  <p>Normal Users</p>
-                  <h3>{normalUsers}</h3>
-                </div>
-
-                <div className="card-decoration">
-                  📚
-                </div>
-              </div>
-
-
-              <div className="admin-card orange-card">
-                <div className="card-icon">
-                  🛡️
-                </div>
-
-                <div className="card-info">
-                  <p>Admin Users</p>
-                  <h3>{adminUsers}</h3>
-                </div>
-
-                <div className="card-decoration">
-                  ⚙️
-                </div>
-              </div>
-
-            </div>
-
+              </Link>
+            ))}
           </section>
 
+          <h2 className="ap-section-title">
+            Management Sections
+          </h2>
 
-          {/* PRODUCT STATISTICS */}
-          <section className="admin-section">
-
-            <div className="section-heading">
-              <div>
-                <span>
-                  BOOK MANAGEMENT
-                </span>
-
-                <h2>
-                  📚 Product Statistics
-                </h2>
-              </div>
-
-              <div className="section-badge">
-                MARKETPLACE
-              </div>
-            </div>
-
-
-            <div className="admin-grid">
-
-              <div className="admin-card purple-card">
-                <div className="card-icon">
-                  📚
+          <section className="ap-summary">
+            {sections.map((section) => (
+              <Link
+                key={section.label}
+                to={section.to}
+                className="ap-stat-link"
+              >
+                <div className="ap-stat">
+                  <span>{section.icon}</span>
+                  <small>{section.label}</small>
+                  <strong
+                    style={{ fontSize: "0.85rem" }}
+                  >
+                    {section.desc}
+                  </strong>
                 </div>
-
-                <div className="card-info">
-                  <p>Total Products</p>
-                  <h3>{totalProducts}</h3>
-                </div>
-
-                <div className="card-decoration">
-                  📖
-                </div>
-              </div>
-
-
-              <div className="admin-card yellow-card">
-                <div className="card-icon">
-                  ⏳
-                </div>
-
-                <div className="card-info">
-                  <p>Pending Products</p>
-                  <h3>{pendingProducts}</h3>
-                </div>
-
-                <div className="card-decoration">
-                  ⏰
-                </div>
-              </div>
-
-
-              <div className="admin-card green-card">
-                <div className="card-icon">
-                  ✅
-                </div>
-
-                <div className="card-info">
-                  <p>Approved Products</p>
-                  <h3>{approvedProducts}</h3>
-                </div>
-
-                <div className="card-decoration">
-                  ✔️
-                </div>
-              </div>
-
-
-              <div className="admin-card red-card">
-                <div className="card-icon">
-                  ❌
-                </div>
-
-                <div className="card-info">
-                  <p>Rejected Products</p>
-                  <h3>{rejectedProducts}</h3>
-                </div>
-
-                <div className="card-decoration">
-                  🚫
-                </div>
-              </div>
-
-            </div>
-
+              </Link>
+            ))}
           </section>
-
-
-          {/* QUICK OVERVIEW */}
-          <section className="overview-section">
-
-            <div className="section-heading">
-              <div>
-                <span>
-                  MARKETPLACE SUMMARY
-                </span>
-
-                <h2>
-                  📊 Quick Overview
-                </h2>
-              </div>
-            </div>
-
-
-            <div className="overview-grid">
-
-              <div className="overview-item">
-                <div className="overview-icon">
-                  👥
-                </div>
-
-                <div>
-                  <p>Registered Users</p>
-                  <strong>
-                    {totalUsers}
-                  </strong>
-                </div>
-              </div>
-
-
-              <div className="overview-item">
-                <div className="overview-icon">
-                  📚
-                </div>
-
-                <div>
-                  <p>Book Listings</p>
-                  <strong>
-                    {totalProducts}
-                  </strong>
-                </div>
-              </div>
-
-
-              <div className="overview-item">
-                <div className="overview-icon">
-                  ⏳
-                </div>
-
-                <div>
-                  <p>Waiting Approval</p>
-                  <strong>
-                    {pendingProducts}
-                  </strong>
-                </div>
-              </div>
-
-
-              <div className="overview-item">
-                <div className="overview-icon">
-                  ✅
-                </div>
-
-                <div>
-                  <p>Approved Listings</p>
-                  <strong>
-                    {approvedProducts}
-                  </strong>
-                </div>
-              </div>
-
-
-              <div className="overview-item">
-                <div className="overview-icon">
-                  ❌
-                </div>
-
-                <div>
-                  <p>Rejected Listings</p>
-                  <strong>
-                    {rejectedProducts}
-                  </strong>
-                </div>
-              </div>
-
-            </div>
-
-          </section>
-
-
-          {/* FOOTER */}
-          <section className="admin-footer">
-
-            <div className="footer-book">
-              📚
-            </div>
-
-            <div>
-              <h2>
-                USED BOOK MARKET
-              </h2>
-
-              <p>
-                Admin control panel
-              </p>
-            </div>
-
-            <div className="footer-status">
-              <span></span>
-              System Online
-            </div>
-
-          </section>
-
         </>
       )}
-
     </main>
   );
 }

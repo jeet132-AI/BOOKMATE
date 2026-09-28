@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { bookImageUrl } from "../utils/bookImage";
 
 function ProductImages() {
   const { productId } = useParams();
@@ -262,7 +263,7 @@ function ProductImages() {
                 key={image.id}
               >
                 <img
-                  src={image.image_url}
+                  src={bookImageUrl(image.image_url)}
                   alt={`Product ${productId}`}
                   width="250"
                 />

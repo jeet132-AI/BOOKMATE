@@ -10,6 +10,7 @@ const productRoutes = require("./routes/productRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const wishlistRoutes = require("./routes/wishlistRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
+const categoryRoutes = require("./routes/categoryRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 
 const app = express();
@@ -85,6 +86,14 @@ app.use(
 app.use(
   "/api/reviews",
   reviewRoutes
+);
+
+
+// PUBLIC CATEGORY LIST
+
+app.use(
+  "/api/categories",
+  categoryRoutes
 );
 
 

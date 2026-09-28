@@ -9,6 +9,8 @@ const createOrder = async (req, res) => {
       product_id,
       delivery_address,
       payment_method,
+      upi_transaction_id,
+      payment_reference,
     } = req.body;
 
     if (!product_id || !delivery_address) {
@@ -16,6 +18,45 @@ const createOrder = async (req, res) => {
         message:
           "Product and delivery address are required",
       });
+    }
+
+    const paymentMethod =
+      payment_method || "Cash on Delivery";
+
+    const ONLINE_METHODS = [
+      "UPI",
+      "Card",
+      "Net Banking",
+      "Wallet",
+    ];
+
+    // Online payments arrive pre-verified (QR / gateway)
+    // with a transaction reference.
+    let transactionId = null;
+    if (paymentMethod === "UPI") {
+      transactionId = String(
+        upi_transaction_id || ""
+      ).trim();
+      if (!/^\d{12}$/.test(transactionId)) {
+        return res.status(400).json({
+          message:
+            "UPI payment verification required. Please pay using the QR code and enter the 12-digit UTR / UPI transaction ID.",
+        });
+      }
+    } else if (
+      ["Card", "Net Banking", "Wallet"].includes(
+        paymentMethod
+      )
+    ) {
+      transactionId = String(
+        payment_reference || ""
+      ).trim();
+      if (!/^[A-Z0-9]{6,20}$/.test(transactionId)) {
+        return res.status(400).json({
+          message:
+            `${paymentMethod} payment verification required. Please complete the payment gateway step first.`,
+        });
+      }
     }
 
     await client.query("BEGIN");
@@ -26,6 +67,7 @@ const createOrder = async (req, res) => {
          p.id,
          p.seller_id,
          p.title,
+         p.category,
          p.seller_price,
          p.status
        FROM products p
@@ -91,37 +133,17 @@ const createOrder = async (req, res) => {
       product.seller_price
     );
 
-    // Get current platform pricing
-    const pricingResult =
-      await client.query(
-        `SELECT
-           fee_type,
-           fee_value
-         FROM pricing_settings
-         ORDER BY id DESC
-         LIMIT 1`
-      );
+    // Category rule first, else global platform pricing
+    const { resolvePricing } = require("./productController");
 
-    let platformFee = 0;
-
-    if (pricingResult.rows.length > 0) {
-      const pricing =
-        pricingResult.rows[0];
-
-      const feeValue = Number(
-        pricing.fee_value
-      );
-
-      if (pricing.fee_type === "percentage") {
-        platformFee =
-          (sellerPrice * feeValue) / 100;
-      } else {
-        platformFee = feeValue;
-      }
-    }
-
-    const buyerPrice =
-      sellerPrice + platformFee;
+    const {
+      platformFee,
+      buyerPrice,
+      deliveryCharge,
+    } = await resolvePricing(
+      sellerPrice,
+      product.category
+    );
 
     // Create order
     const orderResult =
@@ -132,18 +154,20 @@ const createOrder = async (req, res) => {
            product_id,
            seller_price,
            platform_fee,
+           delivery_charge,
            buyer_price,
            status,
            delivery_address
          )
          VALUES
-         ($1, $2, $3, $4, $5, 'pending', $6)
+         ($1, $2, $3, $4, $5, $6, 'pending', $7)
          RETURNING *`,
         [
           req.user.id,
           product_id,
           sellerPrice,
           platformFee,
+          deliveryCharge,
           buyerPrice,
           delivery_address.trim(),
         ]
@@ -152,21 +176,36 @@ const createOrder = async (req, res) => {
     const order = orderResult.rows[0];
 
     // Create payment record
-    await client.query(
+    // Online payments arrive pre-verified (QR / gateway),
+    // everything else stays pending until confirmed.
+    const isOnlinePaid =
+      ONLINE_METHODS.includes(paymentMethod);
+
+    const paymentResult = await client.query(
       `INSERT INTO payments
        (
          order_id,
          amount,
          payment_method,
-         payment_status
+         payment_status,
+         transaction_id,
+         paid_at
        )
        VALUES
-       ($1, $2, $3, 'pending')`,
+       ($1, $2, $3, $4, $5, $6)
+       RETURNING
+         id,
+         payment_method,
+         payment_status,
+         transaction_id,
+         paid_at`,
       [
         order.id,
         buyerPrice,
-        payment_method ||
-          "Cash on Delivery",
+        paymentMethod,
+        isOnlinePaid ? "paid" : "pending",
+        isOnlinePaid ? transactionId : null,
+        isOnlinePaid ? new Date() : null,
       ]
     );
 
@@ -235,6 +274,7 @@ const createOrder = async (req, res) => {
       message:
         "Order placed successfully",
       order,
+      payment: paymentResult.rows[0],
     });
   } catch (error) {
     await client.query("ROLLBACK");
@@ -262,6 +302,7 @@ const getMyOrders = async (req, res) => {
          o.product_id,
          o.seller_price,
          o.platform_fee,
+         o.delivery_charge,
          o.buyer_price,
          o.status,
          o.delivery_address,
@@ -271,9 +312,21 @@ const getMyOrders = async (req, res) => {
          p.category,
          p.condition,
 
+         (
+           SELECT pi.image_url
+           FROM product_images pi
+           WHERE pi.product_id = p.id
+           ORDER BY pi.created_at ASC
+           LIMIT 1
+         ) AS image_url,
+
          u.id AS seller_id,
          u.name AS seller_name,
          u.email AS seller_email,
+
+         pay.payment_method,
+         pay.payment_status,
+         pay.transaction_id,
 
          s.tracking_number,
          s.courier_name,
@@ -288,6 +341,9 @@ const getMyOrders = async (req, res) => {
 
        JOIN users u
          ON p.seller_id = u.id
+
+       LEFT JOIN payments pay
+         ON pay.order_id = o.id
 
        LEFT JOIN shipping s
          ON s.order_id = o.id
@@ -326,6 +382,7 @@ const getOrderById = async (req, res) => {
          o.product_id,
          o.seller_price,
          o.platform_fee,
+         o.delivery_charge,
          o.buyer_price,
          o.status,
          o.delivery_address,
@@ -335,9 +392,21 @@ const getOrderById = async (req, res) => {
          p.category,
          p.condition,
 
+         (
+           SELECT pi.image_url
+           FROM product_images pi
+           WHERE pi.product_id = p.id
+           ORDER BY pi.created_at ASC
+           LIMIT 1
+         ) AS image_url,
+
          u.id AS seller_id,
          u.name AS seller_name,
          u.email AS seller_email,
+
+         pay.payment_method,
+         pay.payment_status,
+         pay.transaction_id,
 
          s.tracking_number,
          s.courier_name,
@@ -352,6 +421,9 @@ const getOrderById = async (req, res) => {
 
        JOIN users u
          ON p.seller_id = u.id
+
+       LEFT JOIN payments pay
+         ON pay.order_id = o.id
 
        LEFT JOIN shipping s
          ON s.order_id = o.id

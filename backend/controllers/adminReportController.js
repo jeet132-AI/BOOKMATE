@@ -298,9 +298,202 @@ const deleteReport = async (req, res) => {
 };
 
 
+// PERFORMANCE ANALYTICS — marketplace overview
+// GET /api/admin/reports/stats?period=daily|monthly|yearly&from=YYYY-MM-DD&to=YYYY-MM-DD&category=X
+const getPerformanceStats = async (req, res) => {
+  try {
+    const allowedPeriods = {
+      daily: { unit: "day", format: "YYYY-MM-DD" },
+      monthly: { unit: "month", format: "YYYY-MM" },
+      yearly: { unit: "year", format: "YYYY" },
+    };
+
+    const period = allowedPeriods[req.query.period]
+      ? req.query.period
+      : "monthly";
+    const { unit, format } = allowedPeriods[period];
+
+    const { from, to, category } = req.query;
+
+    // Shared filters for order-based queries
+    const orderFilters = [];
+    const orderValues = [];
+    const productFilters = [];
+    const productValues = [];
+
+    if (from) {
+      orderValues.push(from);
+      orderFilters.push(
+        `o.created_at >= $${orderValues.length}`
+      );
+    }
+
+    if (to) {
+      orderValues.push(to);
+      orderFilters.push(
+        `o.created_at <= ($${orderValues.length}::date + INTERVAL '1 day' - INTERVAL '1 second')`
+      );
+    }
+
+    if (category && category !== "All") {
+      orderValues.push(category);
+      orderFilters.push(
+        `p.category = $${orderValues.length}`
+      );
+      productValues.push(category);
+      productFilters.push(
+        `p.category = $${productValues.length}`
+      );
+    }
+
+    const orderWhere = orderFilters.length
+      ? `WHERE ${orderFilters.join(" AND ")}`
+      : "";
+    const productWhere = productFilters.length
+      ? `WHERE ${productFilters.join(" AND ")}`
+      : "";
+
+    // Default time window when no explicit dates given
+    let windowClause = "";
+    if (!from && !to) {
+      if (period === "daily") {
+        windowClause = `o.created_at >= CURRENT_DATE - INTERVAL '30 days'`;
+      } else if (period === "monthly") {
+        windowClause = `o.created_at >= CURRENT_DATE - INTERVAL '12 months'`;
+      }
+    }
+
+    const scopedWhere = [
+      ...orderFilters,
+      ...(windowClause ? [windowClause] : []),
+    ];
+    const scopedWhereSql = scopedWhere.length
+      ? `WHERE ${scopedWhere.join(" AND ")}`
+      : "";
+
+    // ---- Totals ----
+    const totalsResult = await pool.query(
+      `SELECT
+         COUNT(*) FILTER (WHERE o.status <> 'cancelled')::int AS total_orders,
+         COUNT(*) FILTER (WHERE o.status = 'delivered')::int AS delivered_orders,
+         COALESCE(SUM(o.buyer_price) FILTER (WHERE o.status <> 'cancelled'), 0) AS total_sales,
+         COALESCE(SUM(o.platform_fee) FILTER (WHERE o.status <> 'cancelled'), 0) AS platform_earnings
+       FROM orders o
+       JOIN products p ON o.product_id = p.id
+       ${orderWhere}`,
+      orderValues
+    );
+
+    // ---- Books ----
+    const booksResult = await pool.query(
+      `SELECT
+         COUNT(*)::int AS listed,
+         COUNT(*) FILTER (WHERE p.status = 'sold')::int AS sold
+       FROM products p
+       ${productWhere}`,
+      productValues
+    );
+
+    // ---- Users ----
+    const usersResult = await pool.query(
+      `SELECT
+         COUNT(*)::int AS total_users,
+         (SELECT COUNT(DISTINCT seller_id)::int FROM products) AS total_sellers`
+    );
+
+    // ---- Payouts ----
+    const payoutFilters = [];
+    const payoutValues = [];
+    if (from) {
+      payoutValues.push(from);
+      payoutFilters.push(
+        `sp.created_at >= $${payoutValues.length}`
+      );
+    }
+    if (to) {
+      payoutValues.push(to);
+      payoutFilters.push(
+        `sp.created_at <= ($${payoutValues.length}::date + INTERVAL '1 day' - INTERVAL '1 second')`
+      );
+    }
+    const payoutWhere = payoutFilters.length
+      ? `WHERE ${payoutFilters.join(" AND ")}`
+      : "";
+    const payoutsResult = await pool.query(
+      `SELECT
+         COALESCE(SUM(sp.amount) FILTER (WHERE sp.payout_status = 'paid'), 0) AS paid,
+         COALESCE(SUM(sp.amount) FILTER (WHERE sp.payout_status = 'pending'), 0) AS pending,
+         COALESCE(SUM(sp.amount) FILTER (WHERE sp.payout_status = 'failed'), 0) AS failed
+       FROM seller_payouts sp
+       ${payoutWhere}`,
+      payoutValues
+    );
+
+    // ---- Sales by category ----
+    const categoryResult = await pool.query(
+      `SELECT
+         p.category,
+         COUNT(*)::int AS orders,
+         COALESCE(SUM(o.buyer_price), 0) AS revenue
+       FROM orders o
+       JOIN products p ON o.product_id = p.id
+       ${scopedWhereSql ? `${scopedWhereSql} AND o.status <> 'cancelled'` : `WHERE o.status <> 'cancelled'`}
+       GROUP BY p.category
+       ORDER BY revenue DESC`,
+      orderValues
+    );
+
+    // ---- Timeseries ----
+    const seriesResult = await pool.query(
+      `SELECT
+         to_char(date_trunc('${unit}', o.created_at), '${format}') AS label,
+         COUNT(*)::int AS orders,
+         COALESCE(SUM(o.buyer_price), 0) AS revenue
+       FROM orders o
+       JOIN products p ON o.product_id = p.id
+       ${scopedWhereSql ? `${scopedWhereSql} AND o.status <> 'cancelled'` : `WHERE o.status <> 'cancelled'`}
+       GROUP BY date_trunc('${unit}', o.created_at), label
+       ORDER BY date_trunc('${unit}', o.created_at) ASC`,
+      orderValues
+    );
+
+    res.json({
+      period,
+      filters: {
+        from: from || null,
+        to: to || null,
+        category: category || "All",
+      },
+      totals: {
+        ...totalsResult.rows[0],
+        books_listed: booksResult.rows[0].listed,
+        books_sold: booksResult.rows[0].sold,
+        total_users: usersResult.rows[0].total_users,
+        total_sellers: usersResult.rows[0].total_sellers,
+        payouts_paid: payoutsResult.rows[0].paid,
+        payouts_pending: payoutsResult.rows[0].pending,
+        payouts_failed: payoutsResult.rows[0].failed,
+      },
+      sales_by_category: categoryResult.rows,
+      timeseries: seriesResult.rows,
+    });
+  } catch (error) {
+    console.error(
+      "Performance stats error:",
+      error.message
+    );
+
+    res.status(500).json({
+      message: "Server error",
+    });
+  }
+};
+
+
 module.exports = {
   getAllReports,
   getReportById,
+  getPerformanceStats,
   updateReportStatus,
   deleteReport,
 };

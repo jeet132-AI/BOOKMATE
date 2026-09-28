@@ -22,6 +22,7 @@ function AdminNavbar() {
     { name: "Payouts", path: "/payouts", icon: "💰" },
     { name: "Categories", path: "/categories", icon: "🗂️" },
     { name: "Reports", path: "/reports", icon: "📊" },
+    { name: "Reviews", path: "/reviews", icon: "⭐" },
     { name: "Pricing", path: "/pricing", icon: "⚙️" },
   ];
 

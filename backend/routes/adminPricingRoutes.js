@@ -6,6 +6,9 @@ const adminMiddleware = require("../middleware/adminMiddleware");
 const {
   getPricingSettings,
   updatePricingSettings,
+  getCategoryPricingRules,
+  upsertCategoryPricingRule,
+  deleteCategoryPricingRule,
 } = require("../controllers/adminPricingController");
 
 const router = express.Router();
@@ -24,6 +27,28 @@ router.put(
   authMiddleware,
   adminMiddleware,
   updatePricingSettings
+);
+
+// Category-wise pricing rules
+router.get(
+  "/rules",
+  authMiddleware,
+  adminMiddleware,
+  getCategoryPricingRules
+);
+
+router.post(
+  "/rules",
+  authMiddleware,
+  adminMiddleware,
+  upsertCategoryPricingRule
+);
+
+router.delete(
+  "/rules/:id",
+  authMiddleware,
+  adminMiddleware,
+  deleteCategoryPricingRule
 );
 
 module.exports = router;

@@ -194,7 +194,9 @@
 ========================================= */
 
 .details-image-card {
-  position: relative;
+  position: sticky;
+  top: 110px;
+  align-self: start;
   min-height: 620px;
 
   padding: 20px;
@@ -407,6 +409,39 @@
   font-weight: 900;
   letter-spacing: 1.5px;
   text-transform: uppercase;
+}
+
+.sold-badge {
+  display: inline-block;
+
+  margin-left: 10px;
+  padding: 7px 16px;
+
+  border-radius: 50px;
+
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+
+  color: #f87171;
+
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+}
+
+.sold-note {
+  margin-top: 4px;
+  padding: 13px 15px;
+
+  border-radius: 12px;
+
+  background: rgba(239, 68, 68, 0.07);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+
+  color: #fca5a5;
+
+  font-size: 0.82rem;
+  line-height: 1.6;
 }
 
 .details-title {
@@ -827,6 +862,92 @@
 }
 
 /* =========================================
+   RATINGS & REVIEWS
+========================================= */
+
+.details-reviews-card {
+  position: relative;
+  z-index: 2;
+
+  max-width: 1200px;
+  margin: 25px auto 0;
+
+  padding: 24px 28px;
+
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.details-reviews-header h3 {
+  margin: 0 0 8px;
+
+  color: #f8fafc;
+  font-size: 1.25rem;
+}
+
+.details-rating-summary {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  color: #94a3b8;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.details-avg-badge {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(20, 184, 166, 0.15);
+  color: #5eead4;
+  font-weight: 900;
+}
+
+.details-no-reviews {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.details-reviews-list {
+  margin-top: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.details-review-item {
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.details-review-item p {
+  margin: 0 0 6px;
+  color: #cbd5e1;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.details-review-item p:last-child {
+  margin-bottom: 0;
+}
+
+.details-review-stars {
+  margin-right: 8px;
+  color: #fbbf24;
+  letter-spacing: 1px;
+}
+
+.details-review-item strong {
+  color: #f8fafc;
+  font-size: 0.82rem;
+}
+
+/* =========================================
    LOADING
 ========================================= */
 
@@ -976,6 +1097,7 @@
   }
 
   .details-image-card {
+    position: static;
     min-height: auto;
   }
 

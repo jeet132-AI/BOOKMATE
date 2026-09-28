@@ -275,9 +275,106 @@ const deleteReview = async (
 };
 
 
+// ADMIN — Get every buyer review with book + buyer info
+const getAllReviews = async (
+  req,
+  res
+) => {
+  try {
+    const result = await pool.query(
+      `SELECT
+         r.id,
+         r.product_id,
+         r.rating,
+         r.comment,
+         r.created_at,
+
+         p.title AS product_title,
+         p.status AS product_status,
+
+         u.id AS buyer_id,
+         u.name AS buyer_name,
+         u.email AS buyer_email,
+
+         (
+           SELECT COUNT(*)
+           FROM reports rep
+           WHERE rep.product_id = r.product_id
+           AND rep.status IN ('pending', 'reviewing')
+         ) AS open_report_count
+
+       FROM reviews r
+
+       JOIN products p
+         ON r.product_id = p.id
+
+       JOIN users u
+         ON r.buyer_id = u.id
+
+       ORDER BY r.created_at DESC`
+    );
+
+    res.json({
+      reviews: result.rows,
+    });
+  } catch (error) {
+    console.error(
+      "Get all reviews error:",
+      error.message
+    );
+
+    res.status(500).json({
+      message: "Server error",
+    });
+  }
+};
+
+
+// ADMIN — Remove any review (abuse / fake reviews)
+const deleteAnyReview = async (
+  req,
+  res
+) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(
+      `DELETE FROM reviews
+       WHERE id = $1
+       RETURNING *`,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        message:
+          "Review not found",
+      });
+    }
+
+    res.json({
+      message:
+        "Review deleted successfully",
+      review: result.rows[0],
+    });
+  } catch (error) {
+    console.error(
+      "Admin delete review error:",
+      error.message
+    );
+
+    res.status(500).json({
+      message: "Server error",
+    });
+  }
+};
+
+
 module.exports = {
   getProductReviews,
   createReview,
   getMyReviews,
   deleteReview,
+  getAllReviews,
+  deleteAnyReview,
 };

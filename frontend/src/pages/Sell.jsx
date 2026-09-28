@@ -1,11 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { CLASS_OPTIONS } from "../data/classes";
 import "./Sell.css";
+
+const FALLBACK_CATEGORIES = [
+  "Programming",
+  "Database",
+  "Networking",
+  "Other",
+];
 
 const initialFormData = {
   title: "",
   seller_price: "",
   category: "",
   condition: "",
+  class_name: "",
   description: "",
   location: "",
 };
@@ -34,6 +43,41 @@ function Sell() {
 
   const [isSubmitting, setIsSubmitting] =
     useState(false);
+
+  const [categoryOptions, setCategoryOptions] =
+    useState(FALLBACK_CATEGORIES);
+
+  // Live categories managed by admin; deactivated
+  // categories disappear from this dropdown.
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/categories"
+        );
+        const data = await response.json();
+
+        if (
+          response.ok &&
+          Array.isArray(data.categories) &&
+          data.categories.length > 0
+        ) {
+          setCategoryOptions(
+            data.categories.map(
+              (category) => category.name
+            )
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Sell categories error:",
+          error
+        );
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
 
   function handleChange(event) {
@@ -268,6 +312,12 @@ function Sell() {
       formDataToSend.append(
         "condition",
         formData.condition
+      );
+
+
+      formDataToSend.append(
+        "class_name",
+        formData.class_name
       );
 
 
@@ -560,7 +610,6 @@ function Sell() {
                 Category
               </label>
 
-
               <select
                 id="book-category"
                 name="category"
@@ -579,24 +628,16 @@ function Sell() {
                 </option>
 
 
-                <option value="Programming">
-                  Programming
-                </option>
-
-
-                <option value="Database">
-                  Database
-                </option>
-
-
-                <option value="Networking">
-                  Networking
-                </option>
-
-
-                <option value="Other">
-                  Other
-                </option>
+                {categoryOptions.map(
+                  (option) => (
+                    <option
+                      key={option}
+                      value={option}
+                    >
+                      {option}
+                    </option>
+                  )
+                )}
 
               </select>
 
@@ -645,6 +686,49 @@ function Sell() {
               </select>
 
             </div>
+
+          </div>
+
+
+          {/* CLASS / EXAM */}
+
+          <div className="form-field">
+
+            <label htmlFor="book-class">
+              Class / Exam
+            </label>
+
+
+            <select
+              id="book-class"
+              name="class_name"
+              value={
+                formData.class_name
+              }
+              onChange={handleChange}
+              required
+            >
+
+              <option
+                value=""
+                disabled
+              >
+                Choose class or exam
+              </option>
+
+
+              {CLASS_OPTIONS.map(
+                (option) => (
+                  <option
+                    key={option}
+                    value={option}
+                  >
+                    {option}
+                  </option>
+                )
+              )}
+
+            </select>
 
           </div>
 

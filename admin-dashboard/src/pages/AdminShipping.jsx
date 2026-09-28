@@ -14,6 +14,17 @@ function AdminShipping() {
     shipping_status: "shipped",
   });
   const [updating, setUpdating] = useState(false);
+  const [trackingOrder, setTrackingOrder] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  const COURIER_SUGGESTIONS = [
+    "Delhivery",
+    "DTDC",
+    "Ecom Express",
+    "Blue Dart",
+    "XpressBees",
+    "India Post",
+  ];
 
   const fetchShipments = async () => {
     const token = localStorage.getItem("token");
@@ -101,23 +112,43 @@ function AdminShipping() {
         return false;
       }
       setShipments((current) =>
-        current.map((item) =>
-          item.id === shipmentId
-            ? {
-                ...item,
-                courier_name:
-                  payload.courier_name !== undefined
-                    ? payload.courier_name || item.courier_name
-                    : item.courier_name,
-                tracking_number:
-                  payload.tracking_number !== undefined
-                    ? payload.tracking_number || item.tracking_number
-                    : item.tracking_number,
-                shipping_status:
-                  payload.shipping_status || item.shipping_status,
-              }
-            : item
-        )
+        current.map((item) => {
+          if (item.id !== shipmentId) return item;
+
+          const nextStatus =
+            payload.shipping_status || item.shipping_status;
+
+          // Mirror the backend order-status sync
+          let nextOrderStatus = item.order_status;
+          if (nextStatus === "shipped") {
+            nextOrderStatus = "shipped";
+          } else if (nextStatus === "in_transit") {
+            if (
+              item.order_status !== "delivered" &&
+              item.order_status !== "cancelled"
+            ) {
+              nextOrderStatus = "shipped";
+            }
+          } else if (nextStatus === "delivered") {
+            nextOrderStatus = "delivered";
+          } else if (nextStatus === "cancelled") {
+            nextOrderStatus = "cancelled";
+          }
+
+          return {
+            ...item,
+            courier_name:
+              payload.courier_name !== undefined
+                ? payload.courier_name || item.courier_name
+                : item.courier_name,
+            tracking_number:
+              payload.tracking_number !== undefined
+                ? payload.tracking_number || item.tracking_number
+                : item.tracking_number,
+            shipping_status: nextStatus,
+            order_status: nextOrderStatus,
+          };
+        })
       );
       return true;
     } catch (error) {
@@ -130,6 +161,33 @@ function AdminShipping() {
   };
 
   const handleUpdate = async (shipmentId) => {
+    const current = shipments.find(
+      (item) => item.id === shipmentId
+    );
+
+    const courier =
+      editForm.courier_name.trim() ||
+      current?.courier_name ||
+      "";
+    const tracking =
+      editForm.tracking_number.trim() ||
+      current?.tracking_number ||
+      "";
+
+    if (
+      ["shipped", "in_transit", "delivered"].includes(
+        editForm.shipping_status
+      ) &&
+      (!courier || !tracking)
+    ) {
+      setMessage(
+        "Courier name and tracking number are required to mark a shipment as " +
+          editForm.shipping_status +
+          "."
+      );
+      return;
+    }
+
     const ok = await saveShipment(shipmentId, {
       courier_name: editForm.courier_name.trim() || undefined,
       tracking_number: editForm.tracking_number.trim() || undefined,
@@ -142,24 +200,77 @@ function AdminShipping() {
     );
   };
 
-  const handleQuickStatus = async (shipmentId, nextStatus) => {
+  const needsDetails = (shipment) =>
+    !shipment.courier_name || !shipment.tracking_number;
+
+  const handleQuickStatus = async (
+    shipment,
+    nextStatus
+  ) => {
+    // Courier + tracking must exist before dispatch stages
+    if (
+      ["shipped", "in_transit", "delivered"].includes(
+        nextStatus
+      ) &&
+      needsDetails(shipment)
+    ) {
+      startEdit(shipment);
+      setMessage(
+        "Fill courier name and tracking number first, then press Save."
+      );
+      return;
+    }
+
     if (
       !window.confirm(
-        `Set shipping #${shipmentId} to ${nextStatus}? User will see order tracking update.`
+        `Set shipping #${shipment.id} to ${nextStatus}? User will see order tracking update.`
       )
     )
       return;
-    const ok = await saveShipment(shipmentId, {
+    const ok = await saveShipment(shipment.id, {
       shipping_status: nextStatus,
     });
     if (!ok) return;
     setMessage(
-      `Shipping #${shipmentId} is now ${nextStatus}. User sees updated tracking.`
+      `Shipping #${shipment.id} is now ${nextStatus}. User sees updated tracking.`
     );
   };
 
-  const getStatusClass = (status) => {
-    switch (status) {
+  const handleQuickCancel = async (shipment) => {
+    if (
+      !window.confirm(
+        `Cancel shipping #${shipment.id}? The order is cancelled, prepaid amounts are refunded and the book goes back on sale.`
+      )
+    )
+      return;
+    const ok = await saveShipment(shipment.id, {
+      shipping_status: "cancelled",
+    });
+    if (!ok) return;
+    setMessage(
+      `Shipping #${shipment.id} cancelled. Order refunded and book is back on sale.`
+    );
+  };
+
+  const handleCopyTracking = async (text) => {
+    if (!text) return;
+
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const area = document.createElement("textarea");
+      area.value = text;
+      document.body.appendChild(area);
+      area.select();
+      document.execCommand("copy");
+      document.body.removeChild(area);
+    }
+
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const getStatusClass = (status) => {    switch (status) {
       case "pending":
         return "ship-status pending";
       case "shipped":
@@ -359,6 +470,9 @@ function AdminShipping() {
                       <small className="order-book-name">
                         {shipment.product_title || ""}
                       </small>
+                      <small className="order-status-name">
+                        Order: {shipment.order_status || "—"}
+                      </small>
                     </td>
                     <td>
                       <div className="person-cell">
@@ -373,18 +487,31 @@ function AdminShipping() {
                     </td>
                     <td>
                       {editingId === shipment.id ? (
-                        <input
-                          className="ship-inline-input"
-                          type="text"
-                          placeholder="Courier"
-                          value={editForm.courier_name}
-                          onChange={(e) =>
-                            setEditForm((current) => ({
-                              ...current,
-                              courier_name: e.target.value,
-                            }))
-                          }
-                        />
+                        <>
+                          <input
+                            className="ship-inline-input"
+                            type="text"
+                            placeholder="Courier"
+                            list="courier-suggestions"
+                            value={editForm.courier_name}
+                            onChange={(e) =>
+                              setEditForm((current) => ({
+                                ...current,
+                                courier_name: e.target.value,
+                              }))
+                            }
+                          />
+                          <datalist id="courier-suggestions">
+                            {COURIER_SUGGESTIONS.map(
+                              (name) => (
+                                <option
+                                  key={name}
+                                  value={name}
+                                />
+                              )
+                            )}
+                          </datalist>
+                        </>
                       ) : (
                         <span className="courier-value">
                           {shipment.courier_name || "—"}
@@ -459,22 +586,44 @@ function AdminShipping() {
                         <div className="ship-action-cell">
                           <button
                             type="button"
+                            className="ship-action-button track-button"
+                            onClick={() => {
+                              setTrackingOrder(shipment);
+                              setCopied(false);
+                            }}
+                          >
+                            👁 Track
+                          </button>
+                          <button
+                            type="button"
                             className="ship-action-button handle-button"
                             onClick={() => startEdit(shipment)}
                           >
                             Handle ✏️
                           </button>
                           {shipment.shipping_status === "pending" && (
-                            <button
-                              type="button"
-                              className="ship-action-button quick-ship-button"
-                              disabled={updating}
-                              onClick={() =>
-                                handleQuickStatus(shipment.id, "shipped")
-                              }
-                            >
-                              Ship 🚚
-                            </button>
+                            <>
+                              <button
+                                type="button"
+                                className="ship-action-button quick-ship-button"
+                                disabled={updating}
+                                onClick={() =>
+                                  handleQuickStatus(shipment, "shipped")
+                                }
+                              >
+                                Ship 🚚
+                              </button>
+                              <button
+                                type="button"
+                                className="ship-action-button quick-cancel-button"
+                                disabled={updating}
+                                onClick={() =>
+                                  handleQuickCancel(shipment)
+                                }
+                              >
+                                Cancel ✕
+                              </button>
+                            </>
                           )}
                           {(shipment.shipping_status === "shipped" ||
                             shipment.shipping_status === "in_transit") && (
@@ -483,7 +632,7 @@ function AdminShipping() {
                               className="ship-action-button quick-deliver-button"
                               disabled={updating}
                               onClick={() =>
-                                handleQuickStatus(shipment.id, "delivered")
+                                handleQuickStatus(shipment, "delivered")
                               }
                             >
                               Deliver ✓
@@ -499,6 +648,179 @@ function AdminShipping() {
           </div>
         )}
       </section>
+
+      {/* TRACK SHIPMENT MODAL */}
+      {trackingOrder && (
+        <div
+          className="ship-modal-overlay"
+          onClick={() => setTrackingOrder(null)}
+        >
+          <div
+            className="ship-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="ship-modal-header">
+              <h2>
+                Track Shipment #
+                {trackingOrder.id}
+              </h2>
+
+              <button
+                type="button"
+                className="ship-modal-close"
+                onClick={() => setTrackingOrder(null)}
+                aria-label="Close tracking"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="ship-modal-status">
+              <span
+                className={getStatusClass(
+                  trackingOrder.shipping_status
+                )}
+              >
+                <span className="status-dot"></span>
+                {trackingOrder.shipping_status}
+              </span>
+
+              <small>
+                Order #{trackingOrder.order_id} •{" "}
+                {trackingOrder.product_title ||
+                  "Book"}
+              </small>
+            </div>
+
+            <div className="ship-modal-grid">
+              <div className="ship-modal-block">
+                <h3>🚚 Courier Details</h3>
+                <p>
+                  Courier:{" "}
+                  <strong>
+                    {trackingOrder.courier_name ||
+                      "Not assigned"}
+                  </strong>
+                </p>
+                <p className="ship-tracking-row">
+                  Tracking:{" "}
+                  <strong>
+                    {trackingOrder.tracking_number ||
+                      "Not assigned"}
+                  </strong>
+                  {trackingOrder.tracking_number && (
+                    <button
+                      type="button"
+                      className="ship-copy-button"
+                      onClick={() =>
+                        handleCopyTracking(
+                          trackingOrder.tracking_number
+                        )
+                      }
+                    >
+                      {copied ? "✓ Copied" : "⧉ Copy"}
+                    </button>
+                  )}
+                </p>
+              </div>
+
+              <div className="ship-modal-block">
+                <h3>📍 Delivery Information</h3>
+                <p>
+                  <strong>
+                    {trackingOrder.buyer_name ||
+                      "Buyer"}
+                  </strong>
+                </p>
+                <p>
+                  {trackingOrder.delivery_address ||
+                    "Address not available"}
+                </p>
+              </div>
+            </div>
+
+            <div className="ship-timeline">
+              {[
+                {
+                  key: "placed",
+                  label: "Placed",
+                  time: trackingOrder.created_at,
+                  done: true,
+                },
+                {
+                  key: "shipped",
+                  label: "Shipped",
+                  time: trackingOrder.shipped_at,
+                  done: [
+                    "shipped",
+                    "in_transit",
+                    "delivered",
+                  ].includes(
+                    trackingOrder.shipping_status
+                  ),
+                },
+                {
+                  key: "in_transit",
+                  label: "In Transit",
+                  time:
+                    trackingOrder.shipping_status ===
+                    "in_transit"
+                      ? trackingOrder.shipped_at
+                      : null,
+                  done: [
+                    "in_transit",
+                    "delivered",
+                  ].includes(
+                    trackingOrder.shipping_status
+                  ),
+                },
+                {
+                  key: "delivered",
+                  label: "Delivered",
+                  time: trackingOrder.delivered_at,
+                  done:
+                    trackingOrder.shipping_status ===
+                    "delivered",
+                },
+              ].map((step, index, steps) => (
+                <div key={step.key}>
+                  <div
+                    className={
+                      step.done
+                        ? "ship-timeline-step done"
+                        : "ship-timeline-step"
+                    }
+                  >
+                    <span className="ship-timeline-dot">
+                      {step.done ? "✓" : index + 1}
+                    </span>
+                    <div>
+                      <strong>{step.label}</strong>
+                      <small>
+                        {step.time
+                          ? new Date(
+                              step.time
+                            ).toLocaleString()
+                          : "Pending"}
+                      </small>
+                    </div>
+                  </div>
+
+                  {index < steps.length - 1 && (
+                    <div
+                      className={
+                        steps[index + 1].done
+                          ? "ship-timeline-line done"
+                          : "ship-timeline-line"
+                      }
+                    ></div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <section className="admin-shipping-footer">
         <div className="footer-icon">📊</div>

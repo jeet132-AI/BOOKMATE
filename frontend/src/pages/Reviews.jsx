@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
+import { frontImage } from "../utils/bookImage";
+import "./Reviews.css";
 
 function Reviews() {
   const [searchParams] = useSearchParams();
@@ -7,6 +9,7 @@ function Reviews() {
   const productId = searchParams.get("product");
 
   const [reviews, setReviews] = useState([]);
+  const [product, setProduct] = useState(null);
   const [rating, setRating] = useState("5");
   const [comment, setComment] = useState("");
   const [message, setMessage] = useState("");
@@ -55,8 +58,29 @@ function Reviews() {
     }
   };
 
+  const fetchProduct = async () => {
+    if (!productId) return;
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/products/${productId}`
+      );
+      const data = await response.json();
+
+      if (response.ok) {
+        setProduct(data.product || null);
+      }
+    } catch (error) {
+      console.error(
+        "Review product error:",
+        error
+      );
+    }
+  };
+
   useEffect(() => {
     fetchReviews();
+    fetchProduct();
   }, [productId]);
 
   const handleSubmit = async (e) => {
@@ -137,171 +161,245 @@ function Reviews() {
     }
   };
 
+  const averageRating = reviews.length
+    ? reviews.reduce(
+        (sum, review) => sum + Number(review.rating),
+        0
+      ) / reviews.length
+    : 0;
+
   if (!productId) {
     return (
-      <div>
-        <h1>Reviews</h1>
+      <main className="reviews-page">
+        <div className="reviews-error-card">
+          <h1>Reviews</h1>
 
-        <p>
-          Select a book to view its
-          reviews.
-        </p>
+          <p>
+            Select a book to view its
+            reviews.
+          </p>
 
-        <Link to="/books">
-          <button type="button">
-            Browse Books
-          </button>
-        </Link>
-      </div>
+          <Link to="/books">
+            <button type="button">
+              Browse Books
+            </button>
+          </Link>
+        </div>
+      </main>
     );
   }
 
   return (
-    <div>
-      <h1>Book Reviews</h1>
-
-      <p>
-        Product ID: #{productId}
-      </p>
-
-      {message && (
-        <p>{message}</p>
-      )}
-
-      <hr />
-
-      <h2>
-        Write a Review
-      </h2>
-
-      {!localStorage.getItem("token") ? (
-        <div>
-          <p>
-            Please login to write a
-            review.
-          </p>
-
-          <Link to="/login">
-            <button type="button">
-              Login
-            </button>
-          </Link>
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit}>
-          <div>
-            <label>
-              Rating:{" "}
-
-              <select
-                value={rating}
-                onChange={(e) =>
-                  setRating(
-                    e.target.value
-                  )
-                }
-              >
-                <option value="5">
-                  5 - Excellent
-                </option>
-
-                <option value="4">
-                  4 - Very Good
-                </option>
-
-                <option value="3">
-                  3 - Good
-                </option>
-
-                <option value="2">
-                  2 - Fair
-                </option>
-
-                <option value="1">
-                  1 - Poor
-                </option>
-              </select>
-            </label>
-          </div>
-
-          <br />
-
-          <textarea
-            rows="5"
-            placeholder="Write your review..."
-            value={comment}
-            onChange={(e) =>
-              setComment(
-                e.target.value
-              )
-            }
-            required
-          />
-
-          <br />
-          <br />
-
-          <button
-            type="submit"
-            disabled={submitting}
-          >
-            {submitting
-              ? "Submitting..."
-              : "Submit Review"}
-          </button>
-        </form>
-      )}
-
-      <hr />
-
-      <h2>
-        Customer Reviews
-      </h2>
-
-      {loading ? (
-        <p>
-          Loading reviews...
+    <main className="reviews-page">
+      <section className="reviews-header">
+        <p className="reviews-label">
+          VERIFIED BUYER REVIEWS
         </p>
-      ) : reviews.length === 0 ? (
-        <p>
-          No reviews yet.
-        </p>
-      ) : (
-        <div>
-          {reviews.map(
-            (review) => (
-              <div
-                key={review.id}
-              >
-                <h3>
-                  {review.user_name ||
-                    "User"}
-                </h3>
 
-                <p>
-                  Rating:{" "}
-                  <strong>
-                    {review.rating}/5
-                  </strong>
-                </p>
+        <h1>
+          Book <span>Reviews</span>
+        </h1>
+      </section>
 
-                <p>
-                  {review.comment}
-                </p>
-
-                <p>
-                  {new Date(
-                    review.created_at
-                  ).toLocaleString()}
-                </p>
-
-                <hr />
-              </div>
-            )
+      {/* Book summary */}
+      <section className="reviews-book-card">
+        <div className="reviews-book-photo">
+          {frontImage(product) ? (
+            <img
+              src={frontImage(product)}
+              alt={product?.title || "Book"}
+            />
+          ) : (
+            "📚"
           )}
         </div>
+
+        <div className="reviews-book-info">
+          <h2>
+            {product?.title ||
+              `Book #${productId}`}
+          </h2>
+
+          {reviews.length > 0 ? (
+            <p className="reviews-summary">
+              <span className="reviews-avg">
+                ★ {averageRating.toFixed(1)}
+              </span>
+              <span>
+                {reviews.length}{" "}
+                {reviews.length === 1
+                  ? "review"
+                  : "reviews"}
+              </span>
+            </p>
+          ) : (
+            <p className="reviews-summary">
+              No reviews yet — be the first
+              to review this book.
+            </p>
+          )}
+        </div>
+
+        <Link
+          to={`/books/${productId}`}
+          className="reviews-view-book"
+        >
+          View Book →
+        </Link>
+      </section>
+
+      {message && (
+        <div className="reviews-message">
+          {message}
+        </div>
       )}
-    </div>
+
+      <div className="reviews-layout">
+        {/* Write a review */}
+        <section className="reviews-form-card">
+          <h2>Write a Review</h2>
+
+          <p>
+            Purchased and received this
+            book? Share your experience.
+          </p>
+
+          {!localStorage.getItem("token") ? (
+            <div>
+              <p>
+                Please login to write a
+                review.
+              </p>
+
+              <Link to="/login">
+                <button
+                  type="button"
+                  className="reviews-submit-button"
+                >
+                  Login
+                </button>
+              </Link>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit}>
+              <label>
+                Your rating
+                <select
+                  value={rating}
+                  onChange={(e) =>
+                    setRating(
+                      e.target.value
+                    )
+                  }
+                >
+                  <option value="5">
+                    5 - Excellent
+                  </option>
+
+                  <option value="4">
+                    4 - Very Good
+                  </option>
+
+                  <option value="3">
+                    3 - Good
+                  </option>
+
+                  <option value="2">
+                    2 - Fair
+                  </option>
+
+                  <option value="1">
+                    1 - Poor
+                  </option>
+                </select>
+              </label>
+
+              <label>
+                Your review
+                <textarea
+                  rows="5"
+                  placeholder="How was the book condition, seller and delivery?"
+                  value={comment}
+                  onChange={(e) =>
+                    setComment(
+                      e.target.value
+                    )
+                  }
+                  required
+                />
+              </label>
+
+              <button
+                type="submit"
+                className="reviews-submit-button"
+                disabled={submitting}
+              >
+                {submitting
+                  ? "Submitting..."
+                  : "Submit Review"}
+              </button>
+            </form>
+          )}
+        </section>
+
+        {/* Review list */}
+        <section className="reviews-list-card">
+          <h2>
+            Customer Reviews{" "}
+            {reviews.length > 0 &&
+              `(${reviews.length})`}
+          </h2>
+
+          {loading ? (
+            <p>Loading reviews...</p>
+          ) : reviews.length === 0 ? (
+            <p>No reviews yet.</p>
+          ) : (
+            <div className="reviews-list">
+              {reviews.map(
+                (review) => (
+                  <article
+                    className="review-item"
+                    key={review.id}
+                  >
+                    <div className="review-item-top">
+                      <span className="review-stars">
+                        {"★".repeat(
+                          Number(
+                            review.rating
+                          )
+                        )}
+                        {"☆".repeat(
+                          5 -
+                            Number(
+                              review.rating
+                            )
+                        )}
+                      </span>
+
+                      <strong>
+                        {review.user_name ||
+                          "Verified Buyer"}
+                      </strong>
+                    </div>
+
+                    <p className="review-comment">
+                      {review.comment}
+                    </p>
+
+                    <small>
+                      {new Date(
+                        review.created_at
+                      ).toLocaleString()}
+                    </small>
+                  </article>
+                )
+              )}
+            </div>
+          )}
+        </section>
+      </div>
+    </main>
   );
 }
 

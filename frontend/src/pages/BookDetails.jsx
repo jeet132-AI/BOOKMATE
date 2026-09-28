@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { frontImage } from "../utils/bookImage";
+import { isOwnBook, useCart } from "../context/CartContext";
 import "./BookDetails.css";
 
 function BookDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { showNotice } = useCart();
 
   const [book, setBook] = useState(null);
   const [message, setMessage] = useState("");
@@ -12,6 +15,7 @@ function BookDetails() {
   const [inWishlist, setInWishlist] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const [actionMessage, setActionMessage] = useState("");
+  const [bookReviews, setBookReviews] = useState([]);
 
   useEffect(() => {
     const fetchBook = async () => {
@@ -40,6 +44,27 @@ function BookDetails() {
     };
 
     fetchBook();
+  }, [id]);
+
+  useEffect(() => {
+    const fetchBookReviews = async () => {
+      if (!id) return;
+
+      try {
+        const response = await fetch(
+          `http://localhost:5000/api/reviews/product/${id}`
+        );
+        const data = await response.json();
+
+        if (response.ok) {
+          setBookReviews(data.reviews || []);
+        }
+      } catch (error) {
+        console.error("Book reviews error:", error);
+      }
+    };
+
+    fetchBookReviews();
   }, [id]);
 
   useEffect(() => {
@@ -149,6 +174,15 @@ function BookDetails() {
       return;
     }
 
+    if (!book || book.status === "sold") return;
+
+    if (isOwnBook(book.seller_id)) {
+      showNotice(
+        "This is your own book — you cannot buy it."
+      );
+      return;
+    }
+
     navigate(`/checkout/${book.id}`);
   };
 
@@ -205,6 +239,8 @@ function BookDetails() {
     book.buyer_price || sellerPrice + platformFee
   );
 
+  const isSold = book.status === "sold";
+
   return (
     <main className="book-details-page">
 
@@ -253,9 +289,9 @@ function BookDetails() {
 
           <div className="details-image">
 
-            {book.image_url ? (
+            {frontImage(book) ? (
               <img
-                src={book.image_url}
+                src={frontImage(book)}
                 alt={book.title}
               />
             ) : (
@@ -286,6 +322,12 @@ function BookDetails() {
             {book.category || "GENERAL"}
           </div>
 
+          {isSold && (
+            <div className="sold-badge">
+              🔴 SOLD OUT
+            </div>
+          )}
+
           <h2 className="details-title">
             {book.title}
           </h2>
@@ -310,6 +352,19 @@ function BookDetails() {
                 </strong>
               </div>
             </div>
+
+            {book.class_name && (
+              <div className="info-item">
+                <span className="info-icon">🎓</span>
+
+                <div>
+                  <small>Class / Exam</small>
+                  <strong>
+                    {book.class_name}
+                  </strong>
+                </div>
+              </div>
+            )}
 
             <div className="info-item">
               <span className="info-icon">✨</span>
@@ -394,31 +449,41 @@ function BookDetails() {
               ← Back
             </button>
 
-            <button
-              type="button"
-              className="buy-button"
-              onClick={handleBuyNow}
-            >
-              <span>🛒</span>
-              <span>Buy Now</span>
-              <span className="button-arrow">→</span>
-            </button>
+            {!isSold && (
+              <button
+                type="button"
+                className="buy-button"
+                onClick={handleBuyNow}
+              >
+                <span>🛒</span>
+                <span>Buy Now</span>
+                <span className="button-arrow">→</span>
+              </button>
+            )}
 
-            <button
-              type="button"
-              className={inWishlist ? "wishlist-button active" : "wishlist-button"}
-              onClick={handleWishlistToggle}
-              disabled={wishlistLoading}
-            >
-              <span>{inWishlist ? "❤️" : "🤍"}</span>
-              <span>
-                {wishlistLoading
-                  ? "Saving..."
-                  : inWishlist
-                    ? "Wishlisted"
-                    : "Add to Wishlist"}
-              </span>
-            </button>
+            {!isSold && (
+              <button
+                type="button"
+                className={inWishlist ? "wishlist-button active" : "wishlist-button"}
+                onClick={handleWishlistToggle}
+                disabled={wishlistLoading}
+              >
+                <span>{inWishlist ? "❤️" : "🤍"}</span>
+                <span>
+                  {wishlistLoading
+                    ? "Saving..."
+                    : inWishlist
+                      ? "Wishlisted"
+                      : "Add to Wishlist"}
+                </span>
+              </button>
+            )}
+
+            {isSold && (
+              <div className="sold-note">
+                This book has been sold and removed from the book list.
+              </div>
+            )}
 
           </div>
 
@@ -427,6 +492,65 @@ function BookDetails() {
           )}
 
         </div>
+      </section>
+
+      {/* Ratings & Reviews (Flipkart style) */}
+      <section className="details-reviews-card">
+
+        <div className="details-reviews-header">
+          <h3>
+            Ratings & Reviews
+          </h3>
+
+          {bookReviews.length > 0 ? (
+            <p className="details-rating-summary">
+              <span className="details-avg-badge">
+                ★{" "}
+                {(
+                  bookReviews.reduce(
+                    (sum, review) =>
+                      sum + Number(review.rating),
+                    0
+                  ) / bookReviews.length
+                ).toFixed(1)}
+              </span>
+              <span>
+                {bookReviews.length}{" "}
+                {bookReviews.length === 1
+                  ? "review"
+                  : "reviews"}
+              </span>
+            </p>
+          ) : (
+            <p className="details-no-reviews">
+              No reviews yet.
+            </p>
+          )}
+        </div>
+
+        {bookReviews.length > 0 && (
+          <div className="details-reviews-list">
+            {bookReviews.slice(0, 3).map((review) => (
+              <article
+                className="details-review-item"
+                key={review.id}
+              >
+                <p>
+                  <span className="details-review-stars">
+                    {"★".repeat(Number(review.rating))}
+                    {"☆".repeat(5 - Number(review.rating))}
+                  </span>
+                  <strong>
+                    {review.user_name || "Verified Buyer"}
+                  </strong>
+                </p>
+
+                <p>{review.comment}</p>
+              </article>
+            ))}
+          </div>
+        )}
+
       </section>
 
       {/* Bottom Message */}

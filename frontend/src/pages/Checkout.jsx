@@ -1,19 +1,23 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { QRCodeSVG } from "qrcode.react";
+import {
+  UPI_APPS,
+  UPI_MERCHANT_NAME,
+  UPI_VPA,
+  buildUpiIntent,
+  isValidUtr,
+} from "../config/payment";
+import { frontImage } from "../utils/bookImage";
+import { useCart } from "../context/CartContext";
 import "./Checkout.css";
 
 const PAYMENT_METHODS = [
   {
-    value: "Cash on Delivery",
-    icon: "💵",
-    title: "Cash on Delivery",
-    desc: "Pay in cash when your book arrives",
-  },
-  {
     value: "UPI",
     icon: "📱",
     title: "UPI",
-    desc: "Pay using UPI",
+    desc: "Scan a QR and pay with any UPI app",
   },
   {
     value: "Card",
@@ -21,7 +25,46 @@ const PAYMENT_METHODS = [
     title: "Card",
     desc: "Pay using debit or credit card",
   },
+  {
+    value: "Net Banking",
+    icon: "🏦",
+    title: "Net Banking",
+    desc: "Pay through your bank account",
+  },
+  {
+    value: "Wallet",
+    icon: "👛",
+    title: "Wallet",
+    desc: "Pay using a mobile wallet",
+  },
 ];
+
+const NET_BANKS = [
+  "State Bank of India",
+  "HDFC Bank",
+  "ICICI Bank",
+  "Axis Bank",
+  "Punjab National Bank",
+  "Bank of Baroda",
+];
+
+const WALLET_APPS = [
+  "Paytm Wallet",
+  "PhonePe Wallet",
+  "Amazon Pay",
+  "Mobikwik",
+];
+
+function makeGatewayReference() {
+  const raw =
+    "GTW" +
+    Date.now().toString(36) +
+    Math.floor(Math.random() * 1296).toString(36);
+  return raw
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 16);
+}
 
 const INITIAL_FORM = {
   fullName: "",
@@ -37,15 +80,183 @@ const INITIAL_FORM = {
 function Checkout() {
   const { productId } = useParams();
   const navigate = useNavigate();
+  const { removeFromCart } = useCart();
 
   const [form, setForm] = useState(INITIAL_FORM);
   const [errors, setErrors] = useState({});
   const [paymentMethod, setPaymentMethod] =
-    useState("Cash on Delivery");
+    useState("UPI");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [order, setOrder] = useState(null);
   const [placedAddress, setPlacedAddress] = useState(null);
+  const [placedPayment, setPlacedPayment] = useState(null);
+
+  // Product being purchased (for price + QR amount)
+  const [product, setProduct] = useState(null);
+  const [productLoading, setProductLoading] = useState(true);
+  const [productError, setProductError] = useState("");
+
+  // UPI payment state
+  const [upiApp, setUpiApp] = useState("Google Pay");
+  const [upiIntent, setUpiIntent] = useState("");
+  const [showUtrForm, setShowUtrForm] = useState(false);
+  const [utr, setUtr] = useState("");
+  const [utrError, setUtrError] = useState("");
+  const [upiVerified, setUpiVerified] = useState(false);
+
+  // Payment gateway state (Card / Net Banking / Wallet)
+  const [gatewayOpen, setGatewayOpen] = useState(false);
+  const [gatewayStage, setGatewayStage] = useState("form");
+  const [gatewayRef, setGatewayRef] = useState("");
+  const [gatewayPaid, setGatewayPaid] = useState(null);
+  const [gatewayError, setGatewayError] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvv, setCardCvv] = useState("");
+  const [netBank, setNetBank] = useState(NET_BANKS[0]);
+  const [walletApp, setWalletApp] = useState(WALLET_APPS[0]);
+
+  useEffect(() => {
+    if (!productId) {
+      setProductLoading(false);
+      return;
+    }
+
+    const fetchProduct = async () => {
+      try {
+        setProductLoading(true);
+        setProductError("");
+
+        const response = await fetch(
+          `http://localhost:5000/api/products/${productId}`
+        );
+        const data = await response.json();
+
+        if (!response.ok) {
+          setProductError(
+            data.message || "This book is no longer available."
+          );
+          return;
+        }
+
+        setProduct(data.product || null);
+      } catch (error) {
+        console.error("Checkout product error:", error);
+        setProductError("Unable to load book details.");
+      } finally {
+        setProductLoading(false);
+      }
+    };
+
+    fetchProduct();
+  }, [productId]);
+
+  const buyerAmount = product ? Number(product.buyer_price) : null;
+
+  const bookPrice =
+    product !== null &&
+    product !== undefined &&
+    product.seller_price !== undefined
+      ? Number(product.seller_price) +
+        Number(product.platform_fee || 0)
+      : null;
+
+  const deliveryCharge =
+    product !== null &&
+    product !== undefined &&
+    product.delivery_charge !== undefined &&
+    product.delivery_charge !== null
+      ? Number(product.delivery_charge)
+      : 0;
+
+  const isGatewayMethod = (method) =>
+    ["Card", "Net Banking", "Wallet"].includes(method);
+
+  const gatewayVerified =
+    gatewayPaid !== null &&
+    gatewayPaid.method === paymentMethod;
+
+  const handlePaymentMethodChange = (value) => {
+    setPaymentMethod(value);
+    setGatewayPaid(null);
+    setGatewayError("");
+    setMessage("");
+  };
+
+  const handleGatewayPay = () => {
+    setGatewayError("");
+
+    if (paymentMethod === "Card") {
+      const digits = cardNumber.replace(/\D/g, "");
+      if (digits.length !== 16) {
+        setGatewayError("Enter a valid 16-digit card number.");
+        return;
+      }
+      if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(cardExpiry.trim())) {
+        setGatewayError("Enter card expiry as MM/YY.");
+        return;
+      }
+      if (!/^\d{3}$/.test(cardCvv.trim())) {
+        setGatewayError("Enter the 3-digit CVV.");
+        return;
+      }
+    }
+
+    setGatewayStage("processing");
+
+    setTimeout(() => {
+      setGatewayRef(makeGatewayReference());
+      setGatewayStage("success");
+    }, 2000);
+  };
+
+  const handleGatewayDone = () => {
+    setGatewayPaid({
+      method: paymentMethod,
+      reference: gatewayRef,
+    });
+    setGatewayOpen(false);
+    setGatewayStage("form");
+    setMessage(
+      `${paymentMethod} payment successful. You can now place your order.`
+    );
+  };
+
+  const openGateway = () => {
+    setGatewayError("");
+    setGatewayStage("form");
+    setGatewayOpen(true);
+  };
+
+  const handleGenerateQr = () => {
+    if (buyerAmount === null || Number.isNaN(buyerAmount)) {
+      setMessage("Book price is still loading. Please wait.");
+      return;
+    }
+
+    setUpiIntent(
+      buildUpiIntent({
+        amount: buyerAmount,
+        transactionNote: `Book order product ${productId}`,
+      })
+    );
+    setShowUtrForm(false);
+    setUpiVerified(false);
+    setMessage("");
+  };
+
+  const handleConfirmUpiPayment = () => {
+    if (!isValidUtr(utr)) {
+      setUtrError("Enter the 12-digit UTR / UPI transaction ID from your payment app.");
+      return;
+    }
+
+    setUtrError("");
+    setUpiVerified(true);
+    setShowUtrForm(false);
+    setMessage("UPI payment verified. You can now place your order.");
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -129,9 +340,37 @@ function Checkout() {
       return;
     }
 
+    if (productError || !product) {
+      setMessage(productError || "Book details are still loading.");
+      return;
+    }
+
+    // Every online method needs a verified payment before placing
+    if (paymentMethod === "UPI" && !upiVerified) {
+      setMessage(
+        "Please pay using the UPI QR code and confirm your payment first."
+      );
+      return;
+    }
+
+    if (
+      isGatewayMethod(paymentMethod) &&
+      !gatewayVerified
+    ) {
+      setMessage(
+        `Please complete the ${paymentMethod} payment in the gateway first.`
+      );
+      return;
+    }
+
+    const paidReference =
+      paymentMethod === "UPI"
+        ? utr.trim()
+        : gatewayPaid.reference;
+
     // User confirms the order like Flipkart before placing
     const confirmed = window.confirm(
-      `Place order with ${paymentMethod}?\n\nDeliver to: ${form.fullName}, ${form.city} - ${form.pincode}`
+      `Place order? ${paymentMethod} payment of ₹${buyerAmount} already verified (Ref ${paidReference}).\n\nDeliver to: ${form.fullName}, ${form.city} - ${form.pincode}`
     );
     if (!confirmed) return;
 
@@ -152,6 +391,12 @@ function Checkout() {
             product_id: Number(productId),
             delivery_address: deliveryAddress,
             payment_method: paymentMethod,
+            ...(paymentMethod === "UPI"
+              ? { upi_transaction_id: utr.trim() }
+              : {
+                  payment_reference:
+                    gatewayPaid.reference,
+                }),
           }),
         }
       );
@@ -166,12 +411,16 @@ function Checkout() {
       }
 
       setOrder(data.order || null);
+      setPlacedPayment(data.payment || null);
+      removeFromCart(productId);
       setPlacedAddress({
         ...form,
         fullText: deliveryAddress,
         paymentMethod,
       });
-      setMessage("Order placed successfully.");
+      setMessage(
+        `${paymentMethod} payment successful. Order placed successfully.`
+      );
     } catch (error) {
       console.error("Checkout error:", error);
 
@@ -219,7 +468,14 @@ function Checkout() {
   ============================== */
 
   if (order) {
-    const isCOD = (placedAddress?.paymentMethod || paymentMethod) === "Cash on Delivery";
+    const paidMethod =
+      placedAddress?.paymentMethod || paymentMethod;
+    const paidReference =
+      placedPayment?.transaction_id ||
+      (paidMethod === "UPI"
+        ? utr.trim()
+        : gatewayPaid?.reference) ||
+      "";
     return (
       <main className="checkout-page">
 
@@ -240,9 +496,9 @@ function Checkout() {
           </h1>
 
           <p className="success-text">
-            {isCOD
-              ? "Your Cash on Delivery order is placed. Keep the amount ready when your book arrives."
-              : "Your book order has been placed successfully."}
+            {paidMethod} payment successful.
+            Your book order has been placed
+            and the book is reserved for you.
           </p>
 
           <div className="success-divider"></div>
@@ -270,8 +526,20 @@ function Checkout() {
               </strong>
             </div>
 
+            {order.delivery_charge !== undefined &&
+              order.delivery_charge !== null && (
+                <div className="order-detail-row">
+                  <span>Delivery Charge</span>
+                  <strong>
+                    {Number(order.delivery_charge) > 0
+                      ? `₹${order.delivery_charge}`
+                      : "FREE"}
+                  </strong>
+                </div>
+              )}
+
             <div className="order-detail-row total-row">
-              <span>{isCOD ? "Pay on Delivery" : "Buyer Price"}</span>
+              <span>Total Amount</span>
               <strong>
                 ₹{order.buyer_price}
               </strong>
@@ -287,10 +555,27 @@ function Checkout() {
             <div className="order-detail-row">
               <span>Payment Method</span>
               <strong>
-                {placedAddress?.paymentMethod || paymentMethod}
-                {isCOD ? " 💵" : ""}
+                {paidMethod} 📱
               </strong>
             </div>
+
+            <div className="order-detail-row">
+              <span>Payment Status</span>
+              <strong className="status-text">
+                {placedPayment?.payment_status === "paid"
+                  ? "✅ Paid"
+                  : "Paid"}
+              </strong>
+            </div>
+
+            {paidReference && (
+              <div className="order-detail-row">
+                <span>Transaction Ref</span>
+                <strong>
+                  {paidReference}
+                </strong>
+              </div>
+            )}
 
             {placedAddress && (
               <>
@@ -316,13 +601,6 @@ function Checkout() {
             )}
 
           </div>
-
-          {isCOD && (
-            <div className="cod-note">
-              💵 <strong>Cash on Delivery:</strong> please keep
-              {" "}₹{order.buyer_price} ready. Pay only when you receive the book.
-            </div>
-          )}
 
           <div className="success-actions">
 
@@ -379,7 +657,7 @@ function Checkout() {
       <section className="checkout-header">
 
         <p className="checkout-label">
-          STUDENT BOOK MARKETPLACE
+          STEP 3 OF 3 • 100% SECURE PAYMENTS
         </p>
 
         <h1>
@@ -387,8 +665,10 @@ function Checkout() {
         </h1>
 
         <p>
-          Add delivery address like Flipkart, choose payment,
-          then place your Cash on Delivery order.
+          Add delivery address, review book
+          price + delivery charge, pay with
+          UPI, Card, Net Banking or Wallet,
+          then place your order.
         </p>
 
         <div className="checkout-header-line"></div>
@@ -413,8 +693,12 @@ function Checkout() {
 
         <div className="step-line"></div>
 
-        <div className="checkout-step">
-          <span>3</span>
+        <div
+          className={
+            upiVerified ? "checkout-step active" : "checkout-step"
+          }
+        >
+          <span>{upiVerified ? "✓" : "3"}</span>
           <p>Confirmation</p>
         </div>
 
@@ -596,7 +880,7 @@ function Checkout() {
                     value={option.value}
                     checked={paymentMethod === option.value}
                     onChange={(e) =>
-                      setPaymentMethod(e.target.value)
+                      handlePaymentMethodChange(e.target.value)
                     }
                   />
 
@@ -617,22 +901,214 @@ function Checkout() {
               ))}
             </div>
 
-            {paymentMethod === "Cash on Delivery" && (
-              <div className="cod-note">
-                💵 <strong>Cash on Delivery selected:</strong> pay in
-                cash when the book is delivered to your address.
+            {isGatewayMethod(paymentMethod) && (
+              <div className="upi-section">
+                <div className="upi-secure">
+                  <span>🔒</span>
+                  <strong>
+                    100% Secure {paymentMethod} Payment
+                  </strong>
+                </div>
+
+                {buyerAmount !== null && !Number.isNaN(buyerAmount) && (
+                  <div className="upi-amount-row">
+                    <span>Total Amount</span>
+                    <strong>₹{buyerAmount}</strong>
+                  </div>
+                )}
+
+                {!gatewayVerified ? (
+                  <button
+                    type="button"
+                    className="upi-generate-button"
+                    onClick={openGateway}
+                    disabled={productLoading || !product}
+                  >
+                    {productLoading
+                      ? "Loading price..."
+                      : `Pay ₹${buyerAmount ?? ""} with ${paymentMethod}`}
+                  </button>
+                ) : (
+                  <div className="upi-verified">
+                    ✅ {gatewayPaid.method} payment
+                    successful
+                    <span>
+                      Ref: {gatewayPaid.reference}
+                    </span>
+                  </div>
+                )}
+
+                {gatewayVerified && (
+                  <button
+                    type="button"
+                    className="upi-regenerate"
+                    onClick={openGateway}
+                  >
+                    ↻ Pay again
+                  </button>
+                )}
+              </div>
+            )}
+
+            {paymentMethod === "UPI" && (
+              <div className="upi-section">
+                <div className="upi-secure">
+                  <span>🔒</span>
+                  <strong>100% Secure UPI Payment</strong>
+                </div>
+
+                {buyerAmount !== null && !Number.isNaN(buyerAmount) && (
+                  <div className="upi-amount-row">
+                    <span>Total Amount</span>
+                    <strong>₹{buyerAmount}</strong>
+                  </div>
+                )}
+
+                <p className="upi-apps-title">Pay using any UPI app</p>
+
+                <div className="upi-apps">
+                  {UPI_APPS.map((app) => (
+                    <label
+                      key={app.value}
+                      className={
+                        upiApp === app.value
+                          ? "upi-app selected"
+                          : "upi-app"
+                      }
+                    >
+                      <input
+                        type="radio"
+                        name="upiApp"
+                        value={app.value}
+                        checked={upiApp === app.value}
+                        onChange={(e) => setUpiApp(e.target.value)}
+                      />
+                      <span className="upi-app-icon">{app.icon}</span>
+                      <span>{app.value}</span>
+                    </label>
+                  ))}
+                </div>
+
+                {!upiIntent ? (
+                  <button
+                    type="button"
+                    className="upi-generate-button"
+                    onClick={handleGenerateQr}
+                    disabled={productLoading || !product}
+                  >
+                    {productLoading
+                      ? "Loading price..."
+                      : `Generate QR • Pay ₹${buyerAmount ?? ""}`}
+                  </button>
+                ) : (
+                  <div className="upi-qr-card">
+                    <p className="upi-qr-title">
+                      Scan with {upiApp} to pay ₹{buyerAmount}
+                    </p>
+
+                    <div className="upi-qr-box">
+                      <QRCodeSVG
+                        value={upiIntent}
+                        size={200}
+                        level="M"
+                        includeMargin
+                      />
+                    </div>
+
+                    <p className="upi-vpa">
+                      Paying to: <strong>{UPI_MERCHANT_NAME}</strong>
+                      <span>{UPI_VPA}</span>
+                    </p>
+
+                    <div className="upi-steps">
+                      <span>1️⃣ Scan QR</span>
+                      <span>2️⃣ Pay in your UPI app</span>
+                      <span>3️⃣ Confirm below</span>
+                    </div>
+
+                    {!upiVerified && !showUtrForm && (
+                      <button
+                        type="button"
+                        className="upi-paid-button"
+                        onClick={() => setShowUtrForm(true)}
+                      >
+                        ✅ I Have Paid
+                      </button>
+                    )}
+
+                    {!upiVerified && showUtrForm && (
+                      <div className="upi-utr-form">
+                        <label htmlFor="utr">
+                          12-digit UTR / UPI Transaction ID *
+                        </label>
+                        <input
+                          id="utr"
+                          name="utr"
+                          type="text"
+                          inputMode="numeric"
+                          maxLength="12"
+                          placeholder="e.g. 423812984512"
+                          value={utr}
+                          onChange={(e) => {
+                            setUtr(e.target.value.replace(/\D/g, ""));
+                            setUtrError("");
+                          }}
+                        />
+                        {utrError && (
+                          <small className="field-error">{utrError}</small>
+                        )}
+                        <button
+                          type="button"
+                          className="upi-confirm-button"
+                          onClick={handleConfirmUpiPayment}
+                        >
+                          Confirm Payment →
+                        </button>
+                      </div>
+                    )}
+
+                    {upiVerified && (
+                      <div className="upi-verified">
+                        ✅ Payment successful via {upiApp}
+                        <span>UTR: {utr.trim()}</span>
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      className="upi-regenerate"
+                      onClick={handleGenerateQr}
+                    >
+                      ↻ Regenerate QR
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
             <button
               type="submit"
               className="place-order-button"
-              disabled={loading}
+              disabled={
+                loading ||
+                (paymentMethod === "UPI" &&
+                  !upiVerified) ||
+                (isGatewayMethod(paymentMethod) &&
+                  !gatewayVerified)
+              }
             >
               {loading ? (
                 <>
                   <span className="button-spinner"></span>
                   Placing Order...
+                </>
+              ) : (paymentMethod === "UPI" &&
+                  !upiVerified) ||
+                (isGatewayMethod(paymentMethod) &&
+                  !gatewayVerified) ? (
+                <>
+                  🔒 Complete {paymentMethod} Payment
+                  First
                 </>
               ) : (
                 <>
@@ -669,17 +1145,34 @@ function Checkout() {
           <div className="summary-book">
 
             <div className="summary-book-icon">
-              📖
+              {frontImage(product) ? (
+                <img
+                  src={frontImage(product)}
+                  alt={product?.title || "Book"}
+                />
+              ) : (
+                "📖"
+              )}
             </div>
 
             <div>
               <strong>
-                Selected Book
+                {productLoading
+                  ? "Loading..."
+                  : product
+                    ? product.title
+                    : "Selected Book"}
               </strong>
 
               <p>
-                Product ID #{productId}
+                {product && buyerAmount !== null
+                  ? `₹${buyerAmount} • Product ID #${productId}`
+                  : `Product ID #${productId}`}
               </p>
+
+              {productError && (
+                <p className="field-error">{productError}</p>
+              )}
             </div>
 
           </div>
@@ -691,9 +1184,32 @@ function Checkout() {
             <div>
               <span>Product</span>
               <strong>
-                Book #{productId}
+                {product ? product.title : `Book #${productId}`}
               </strong>
             </div>
+
+            {bookPrice !== null && (
+              <div>
+                <span>Book Price</span>
+                <strong>₹{bookPrice}</strong>
+              </div>
+            )}
+
+            <div>
+              <span>Delivery Charge</span>
+              <strong>
+                {deliveryCharge > 0
+                  ? `₹${deliveryCharge}`
+                  : "FREE"}
+              </strong>
+            </div>
+
+            {buyerAmount !== null && (
+              <div className="summary-total-row">
+                <span>Total Amount</span>
+                <strong>₹{buyerAmount}</strong>
+              </div>
+            )}
 
             <div>
               <span>Deliver To</span>
@@ -727,6 +1243,206 @@ function Checkout() {
         </aside>
 
       </section>
+
+      {/* PAYMENT GATEWAY MODAL (Card / Net Banking / Wallet) */}
+      {gatewayOpen && (
+        <div
+          className="gateway-overlay"
+          onClick={() => setGatewayOpen(false)}
+        >
+          <div
+            className="gateway-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {gatewayStage === "form" && (
+              <>
+                <div className="gateway-header">
+                  <span>🔒</span>
+                  <div>
+                    <small>PAYMENT GATEWAY</small>
+                    <h2>
+                      Pay with {paymentMethod}
+                    </h2>
+                  </div>
+                  <button
+                    type="button"
+                    className="gateway-close"
+                    onClick={() =>
+                      setGatewayOpen(false)
+                    }
+                    aria-label="Close gateway"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="gateway-amount">
+                  <span>Amount payable</span>
+                  <strong>₹{buyerAmount}</strong>
+                </div>
+
+                {paymentMethod === "Card" && (
+                  <>
+                    <label>
+                      Card Number
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength="19"
+                        placeholder="1234 5678 9012 3456"
+                        value={cardNumber}
+                        onChange={(e) =>
+                          setCardNumber(
+                            e.target.value
+                          )
+                        }
+                      />
+                    </label>
+
+                    <div className="gateway-row">
+                      <label>
+                        Expiry (MM/YY)
+                        <input
+                          type="text"
+                          maxLength="5"
+                          placeholder="MM/YY"
+                          value={cardExpiry}
+                          onChange={(e) =>
+                            setCardExpiry(
+                              e.target.value
+                            )
+                          }
+                        />
+                      </label>
+
+                      <label>
+                        CVV
+                        <input
+                          type="password"
+                          inputMode="numeric"
+                          maxLength="3"
+                          placeholder="•••"
+                          value={cardCvv}
+                          onChange={(e) =>
+                            setCardCvv(
+                              e.target.value
+                            )
+                          }
+                        />
+                      </label>
+                    </div>
+                  </>
+                )}
+
+                {paymentMethod === "Net Banking" && (
+                  <label>
+                    Select your bank
+                    <select
+                      value={netBank}
+                      onChange={(e) =>
+                        setNetBank(
+                          e.target.value
+                        )
+                      }
+                    >
+                      {NET_BANKS.map((bank) => (
+                        <option
+                          key={bank}
+                          value={bank}
+                        >
+                          {bank}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+
+                {paymentMethod === "Wallet" && (
+                  <div className="gateway-wallets">
+                    {WALLET_APPS.map((app) => (
+                      <label
+                        key={app}
+                        className={
+                          walletApp === app
+                            ? "gateway-wallet selected"
+                            : "gateway-wallet"
+                        }
+                      >
+                        <input
+                          type="radio"
+                          name="walletApp"
+                          value={app}
+                          checked={
+                            walletApp === app
+                          }
+                          onChange={(e) =>
+                            setWalletApp(
+                              e.target.value
+                            )
+                          }
+                        />
+                        <span>{app}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {gatewayError && (
+                  <p className="gateway-error">
+                    ⚠️ {gatewayError}
+                  </p>
+                )}
+
+                <button
+                  type="button"
+                  className="gateway-pay-button"
+                  onClick={handleGatewayPay}
+                >
+                  Pay ₹{buyerAmount}
+                </button>
+
+                <p className="gateway-note">
+                  🔒 256-bit encrypted demo
+                  gateway. No real money moves.
+                </p>
+              </>
+            )}
+
+            {gatewayStage === "processing" && (
+              <div className="gateway-processing">
+                <div className="gateway-spinner"></div>
+                <h2>Processing Payment...</h2>
+                <p>
+                  Do not press back or refresh.
+                </p>
+              </div>
+            )}
+
+            {gatewayStage === "success" && (
+              <div className="gateway-success">
+                <div className="gateway-success-circle">
+                  ✓
+                </div>
+                <h2>Payment Successful</h2>
+                <p>
+                  {paymentMethod} payment of ₹
+                  {buyerAmount} completed.
+                </p>
+                <p className="gateway-ref">
+                  Ref: {gatewayRef}
+                </p>
+                <button
+                  type="button"
+                  className="gateway-pay-button"
+                  onClick={handleGatewayDone}
+                >
+                  Continue →
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
     </main>
   );

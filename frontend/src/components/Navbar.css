@@ -14,12 +14,12 @@
   transform: translateX(-50%);
   z-index: 1000;
   display: flex;
-  width: min(1180px, calc(100% - 24px));
-  min-height: 68px;
+  width: min(1320px, calc(100% - 24px));
+  min-height: 62px;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
-  padding: 10px 12px 10px clamp(18px, 3vw, 28px);
+  gap: 12px;
+  padding: 8px 10px 8px clamp(16px, 2vw, 24px);
   color: #263238;
   background: rgba(245, 244, 235, 0.62);
   -webkit-backdrop-filter: blur(16px) saturate(1.5);
@@ -55,10 +55,11 @@
 .navbar-logo {
   flex: 0 0 auto;
   color: #36444a;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
   letter-spacing: 0.04em;
   text-decoration: none;
+  white-space: nowrap;
   animation: fadeSlideIn 0.5s 0.1s ease both;
   transition: color 0.2s ease, transform 0.2s ease;
 }
@@ -76,8 +77,8 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 6px;
-  flex-wrap: wrap;
+  gap: 4px;
+  flex-wrap: nowrap;
 }
 
 /* Staggered entrance for every nav item */
@@ -112,17 +113,17 @@
 .theme-toggle {
   position: relative;
   display: inline-flex;
-  min-height: 42px;
+  min-height: 38px;
   align-items: center;
   justify-content: center;
-  padding: 10px 15px;
+  padding: 7px 11px;
   border: 1px solid transparent;
   border-radius: 999px;
   overflow: hidden;
   color: #000507;
   background: transparent;
   font: inherit;
-  font-size: 15px;
+  font-size: 13.5px;
   font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
@@ -201,44 +202,304 @@
   outline-offset: 3px;
 }
 
+/* Guest login indicator — pointing hand + bubble */
+.nav-login-hint {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.nav-pointing-hand {
+  display: inline-block;
+  font-size: 20px;
+  filter: drop-shadow(0 2px 5px rgba(22, 143, 120, 0.4));
+  animation: navHandPoint 1.4s ease-in-out infinite;
+  transform-origin: left center;
+}
+
+@keyframes navHandPoint {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  50% {
+    transform: translateX(7px) rotate(-8deg);
+  }
+}
+
+.nav-hint-bubble {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  padding: 6px 11px;
+  border-radius: 10px;
+  background: #168f78;
+  color: white;
+  font-size: 11px;
+  font-weight: 800;
+  box-shadow: 0 8px 20px rgba(22, 143, 120, 0.35);
+  animation: navBubblePulse 1.4s ease-in-out infinite;
+  z-index: 1001;
+}
+
+.nav-hint-bubble::after {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-bottom-color: #168f78;
+}
+
+@keyframes navBubblePulse {
+  0%,
+  100% {
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    transform: translateX(-50%) scale(1.07);
+  }
+}
+
+/* Cart notice toast (own-book block message) */
+.cart-notice {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1300;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(520px, calc(100% - 32px));
+  padding: 13px 14px 13px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(249, 115, 22, 0.4);
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 13.5px;
+  font-weight: 700;
+  box-shadow: 0 16px 40px rgba(12, 33, 40, 0.22);
+  animation: cartNoticeIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes cartNoticeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.cart-notice button {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(154, 52, 18, 0.1);
+  color: #9a3412;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+html[data-theme="dark"] .cart-notice {
+  border-color: rgba(249, 115, 22, 0.4);
+  background: rgba(30, 18, 8, 0.97);
+  color: #fdba74;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+
+html[data-theme="dark"] .cart-notice button {
+  background: rgba(253, 186, 116, 0.12);
+  color: #fdba74;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cart-notice {
+    animation: none;
+  }
+}
+
+/* Cart link with count badge */
+.cart-link {
+  gap: 6px;
+  font-size: 17px;
+}
+
+.cart-count-badge {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #e96a50;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.nav-link.active .cart-count-badge {
+  background: #ffffff;
+  color: #e96a50;
+}
+
 /* Offset page content so fixed pill never overlaps it */
 .main-content {
   padding-top: 108px;
 }
 
-/* Apply the dark appearance without editing the other page styles */
-html[data-theme="dark"] body {
-  filter: invert(0.88) hue-rotate(180deg);
-  transition: filter 0.3s ease;
-}
-
-/* Keep image colors unchanged when the page filter is applied */
-html[data-theme="dark"] img,
-html[data-theme="dark"] video {
-  filter: invert(0.88) hue-rotate(180deg);
-}
-
+/* Dark theme: real dark navbar (replaces the old invert-filter hack) */
 html[data-theme="dark"] .navbar {
-  color: #263238;
+  color: #e8f1f2;
+  background: rgba(9, 24, 29, 0.72);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
-@media (max-width: 900px) {
+html[data-theme="dark"] .navbar.scrolled {
+  background: rgba(9, 24, 29, 0.9);
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+}
+
+html[data-theme="dark"] .navbar-logo {
+  color: #f1f5f9;
+}
+
+html[data-theme="dark"] .nav-link,
+html[data-theme="dark"] .nav-logout-button,
+html[data-theme="dark"] .theme-toggle {
+  color: #e8f1f2;
+}
+
+html[data-theme="dark"] .nav-logout-button {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+html[data-theme="dark"] .theme-toggle {
+  border-color: rgba(45, 212, 191, 0.35);
+  color: #5eead4;
+  background: rgba(20, 184, 166, 0.1);
+}
+
+/* Hamburger toggle — visible only on small screens */
+.menu-toggle {
+  display: none;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(28, 91, 100, 0.22);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.65);
+  color: #234b52;
+  font-size: 19px;
+  cursor: pointer;
+  transition:
+    background-color 0.25s ease,
+    transform 0.2s ease;
+}
+
+.menu-toggle:hover {
+  background: #36bda5;
+  color: #ffffff;
+}
+
+.menu-toggle:active {
+  transform: scale(0.92);
+}
+
+html[data-theme="dark"] .menu-toggle {
+  border-color: rgba(45, 212, 191, 0.35);
+  color: #5eead4;
+  background: rgba(20, 184, 166, 0.1);
+}
+
+.menu-toggle:focus-visible {
+  outline: 3px solid #36bda5;
+  outline-offset: 3px;
+}
+
+@media (max-width: 1100px) {
   .navbar {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 10px;
-    padding-top: 14px;
-    padding-bottom: 14px;
     border-radius: 28px;
   }
 
+  .menu-toggle {
+    display: inline-flex;
+  }
+
   .nav-links {
+    display: none;
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 12px;
+    right: 12px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 14px;
+    border-radius: 22px;
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    background: rgba(245, 244, 235, 0.97);
+    box-shadow: 0 18px 50px rgba(12, 33, 40, 0.25);
+  }
+
+  html[data-theme="dark"] .nav-links {
+    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(9, 24, 29, 0.97);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  }
+
+  .nav-links.open {
+    display: flex;
+    animation: menuDrop 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes menuDrop {
+    from {
+      opacity: 0;
+      transform: translateY(-12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .nav-links > * {
+    animation: none;
+  }
+
+  .nav-link,
+  .nav-logout-button,
+  .theme-toggle {
     width: 100%;
-    justify-content: flex-start;
+    min-height: 44px;
+    font-size: 14px;
+  }
+
+  /* In the dropdown menu keep only the hand, not the bubble */
+  .nav-login-hint {
+    display: none;
   }
 
   .main-content {
-    padding-top: 170px;
+    padding-top: 104px;
   }
 }
 
@@ -251,19 +512,11 @@ html[data-theme="dark"] .navbar {
   }
 
   .navbar-logo {
-    font-size: 17px;
+    font-size: 15px;
   }
 
-  .nav-links {
-    gap: 5px;
-  }
-
-  .nav-link,
-  .nav-logout-button,
-  .theme-toggle {
-    min-height: 38px;
-    padding: 8px 10px;
-    font-size: 13px;
+  .main-content {
+    padding-top: 96px;
   }
 }
 
@@ -274,6 +527,11 @@ html[data-theme="dark"] .navbar {
   .navbar *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .nav-pointing-hand,
+  .nav-hint-bubble {
+    animation: none;
   }
 
   html[data-theme="dark"] body {

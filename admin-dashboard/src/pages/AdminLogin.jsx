@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "./AdminLogin.css";
 
 function AdminLogin() {
   const navigate = useNavigate();
@@ -10,6 +11,7 @@ function AdminLogin() {
   });
 
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -24,6 +26,8 @@ function AdminLogin() {
     setMessage("");
 
     try {
+      setLoading(true);
+
       const response = await fetch(
         "http://localhost:5000/api/auth/login",
         {
@@ -43,7 +47,9 @@ function AdminLogin() {
       }
 
       if (data.user.role !== "admin") {
-        setMessage("Admin access required");
+        setMessage(
+          "Admin access required. User accounts cannot sign in here."
+        );
         return;
       }
 
@@ -56,45 +62,81 @@ function AdminLogin() {
       navigate("/");
     } catch (error) {
       setMessage("Unable to connect to server");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div>
-      <h1>Admin Login</h1>
+    <main className="admin-login-page">
+      <div className="admin-login-card">
+        <div className="admin-login-icon">
+          🛡️
+        </div>
 
-      <form onSubmit={handleSubmit}>
-        <input
-          type="email"
-          name="email"
-          placeholder="Admin email"
-          value={formData.email}
-          onChange={handleChange}
-          required
-        />
+        <h1>
+          Admin <span>Login</span>
+        </h1>
 
-        <br />
-        <br />
+        <p className="admin-login-subtitle">
+          USED BOOK MARKET • CONTROL CENTER
+        </p>
 
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={formData.password}
-          onChange={handleChange}
-          required
-        />
+        <form onSubmit={handleSubmit}>
+          <div className="admin-login-field">
+            <label htmlFor="admin-email">
+              ADMIN EMAIL
+            </label>
 
-        <br />
-        <br />
+            <input
+              id="admin-email"
+              type="email"
+              name="email"
+              placeholder="Admin email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+            />
+          </div>
 
-        <button type="submit">
-          Admin Login
-        </button>
-      </form>
+          <div className="admin-login-field">
+            <label htmlFor="admin-password">
+              PASSWORD
+            </label>
 
-      {message && <p>{message}</p>}
-    </div>
+            <input
+              id="admin-password"
+              type="password"
+              name="password"
+              placeholder="Password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="admin-login-button"
+            disabled={loading}
+          >
+            {loading
+              ? "Verifying..."
+              : "🔐 Admin Login"}
+          </button>
+        </form>
+
+        {message && (
+          <p className="admin-login-message">
+            {message}
+          </p>
+        )}
+
+        <p className="admin-login-footer">
+          RESTRICTED AREA • AUTHORIZED ONLY
+        </p>
+      </div>
+    </main>
   );
 }
 

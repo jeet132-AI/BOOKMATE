@@ -1,7 +1,80 @@
-import { Link } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { frontImage } from "../utils/bookImage";
+import { useCart, isOwnBook } from "../context/CartContext";
 import "./Home.css";
 
 function Home() {
+  const navigate = useNavigate();
+  const dealsRowRef = useRef(null);
+  const { addToCart, isInCart, showNotice } = useCart();
+
+  const isLoggedIn = Boolean(
+    localStorage.getItem("token")
+  );
+
+  const [deals, setDeals] = useState([]);
+  const [dealsLoading, setDealsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDeals = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/products"
+        );
+        const data = await response.json();
+
+        if (response.ok) {
+          setDeals(
+            (data.products || []).slice(0, 10)
+          );
+        }
+      } catch (error) {
+        console.error("Home deals error:", error);
+      } finally {
+        setDealsLoading(false);
+      }
+    };
+
+    fetchDeals();
+  }, []);
+
+  const scrollDeals = (direction) => {
+    dealsRowRef.current?.scrollBy({
+      left: direction * 340,
+      behavior: "smooth",
+    });
+  };
+
+  const allBooks = deals.slice(0, 20);
+
+  const handleBuyNow = (book) => {
+    const bookId = book?.id ?? book;
+
+    if (book && isOwnBook(book.seller_id)) {
+      showNotice(
+        "This is your own book — you cannot buy it."
+      );
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    navigate(`/checkout/${bookId}`);
+  };
+
+  const renderStars = (avgRating) => {
+    if (!avgRating) return null;
+
+    const full = Math.round(Number(avgRating));
+    return "★".repeat(full) + "☆".repeat(5 - full);
+  };
+
   return (
     <div className="home-page">
 
@@ -28,9 +101,29 @@ function Home() {
               Explore Books →
             </Link>
 
-            <Link to="/register" className="hero-btn secondary-btn">
-              Join the Marketplace
-            </Link>
+            <span className="guest-join-wrap">
+              {!isLoggedIn && (
+                <>
+                  <span
+                    className="pointing-hand"
+                    aria-hidden="true"
+                  >
+                    👉
+                  </span>
+
+                  <span className="hint-bubble">
+                    Login / Register here!
+                  </span>
+                </>
+              )}
+
+              <Link
+                to="/register"
+                className="hero-btn secondary-btn"
+              >
+                Join the Marketplace
+              </Link>
+            </span>
           </div>
 
           <div className="hero-stats">
@@ -75,6 +168,264 @@ function Home() {
           />
 
         </div>
+      </section>
+
+
+      {/* ================= TOP BOOK DEALS (Flipkart style) ================= */}
+      <section className="deals-section">
+
+        <div className="deals-header">
+
+          <div>
+            <p className="deals-label">
+              REAL STUDENT LISTINGS
+            </p>
+
+            <h2>
+              Top Books <span>For You</span>
+            </h2>
+          </div>
+
+          <div className="deals-nav">
+
+            <Link
+              to="/books"
+              className="view-all-books"
+            >
+              View All →
+            </Link>
+
+            <button
+              type="button"
+              className="deals-arrow"
+              onClick={() => scrollDeals(-1)}
+              aria-label="Scroll books left"
+            >
+              ‹
+            </button>
+
+            <button
+              type="button"
+              className="deals-arrow"
+              onClick={() => scrollDeals(1)}
+              aria-label="Scroll books right"
+            >
+              ›
+            </button>
+
+          </div>
+
+        </div>
+
+        {dealsLoading ? (
+          <p className="deals-status">
+            Loading top books...
+          </p>
+        ) : deals.length === 0 ? (
+          <p className="deals-status">
+            New books are on the way.{" "}
+            <Link to="/books">Browse all books →</Link>
+          </p>
+        ) : (
+          <div
+            className="deals-row"
+            ref={dealsRowRef}
+          >
+            {deals.map((book) => (
+              <article
+                className="deal-card"
+                key={book.id}
+              >
+                <Link
+                  to={`/books/${book.id}`}
+                  className="deal-image"
+                >
+                  {frontImage(book) ? (
+                    <img
+                      src={frontImage(book)}
+                      alt={book.title}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <span>📚</span>
+                  )}
+                </Link>
+
+                <p className="deal-category">
+                  {book.category || "General"}
+                </p>
+
+                <h3>
+                  <Link to={`/books/${book.id}`}>
+                    {book.title}
+                  </Link>
+                </h3>
+
+                {book.avg_rating ? (
+                  <p className="deal-rating">
+                    <span className="deal-stars">
+                      {renderStars(book.avg_rating)}
+                    </span>
+                    <span>
+                      {Number(book.avg_rating).toFixed(1)} (
+                      {book.review_count})
+                    </span>
+                  </p>
+                ) : (
+                  <p className="deal-rating deal-new">
+                    ✨ New listing
+                  </p>
+                )}
+
+                <p className="deal-price">
+                  ₹{Number(book.buyer_price).toFixed(0)}
+                </p>
+
+                <button
+                  type="button"
+                  className="deal-buy-button"
+                  onClick={() => handleBuyNow(book)}
+                >
+                  🛒 Buy Now
+                </button>
+
+                <button
+                  type="button"
+                  className={
+                    isInCart(book.id)
+                      ? "deal-cart-button added"
+                      : "deal-cart-button"
+                  }
+                  onClick={() => addToCart(book.id, book.seller_id)}
+                  disabled={isInCart(book.id)}
+                >
+                  {isInCart(book.id)
+                    ? "✓ In Cart"
+                    : "＋ Add to Cart"}
+                </button>
+              </article>
+            ))}
+          </div>
+        )}
+
+      </section>
+
+
+      {/* ================= ALL BOOKS (20-book grid, click for details) ================= */}
+      <section className="all-books-section">
+
+        <div className="section-heading">
+          <span>MARKETPLACE COLLECTION</span>
+
+          <h2>
+            Explore <span>All Books</span>
+          </h2>
+
+          <p>
+            Tap any book to see full details,
+            then buy or add it to your cart.
+          </p>
+        </div>
+
+        {dealsLoading ? (
+          <p className="deals-status">
+            Loading books...
+          </p>
+        ) : allBooks.length === 0 ? (
+          <p className="deals-status">
+            New books are on the way.{" "}
+            <Link to="/books">Browse all books →</Link>
+          </p>
+        ) : (
+          <>
+            <div className="all-books-grid">
+              {allBooks.map((book) => (
+                <article
+                  className="deal-card"
+                  key={book.id}
+                >
+                  <Link
+                    to={`/books/${book.id}`}
+                    className="deal-image"
+                  >
+                    {frontImage(book) ? (
+                      <img
+                        src={frontImage(book)}
+                        alt={book.title}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span>📚</span>
+                    )}
+                  </Link>
+
+                  <p className="deal-category">
+                    {book.category || "General"}
+                  </p>
+
+                  <h3>
+                    <Link to={`/books/${book.id}`}>
+                      {book.title}
+                    </Link>
+                  </h3>
+
+                  {book.avg_rating ? (
+                    <p className="deal-rating">
+                      <span className="deal-stars">
+                        {renderStars(book.avg_rating)}
+                      </span>
+                      <span>
+                        {Number(book.avg_rating).toFixed(1)} (
+                        {book.review_count})
+                      </span>
+                    </p>
+                  ) : (
+                    <p className="deal-rating deal-new">
+                      ✨ New listing
+                    </p>
+                  )}
+
+                  <p className="deal-price">
+                    ₹{Number(book.buyer_price).toFixed(0)}
+                  </p>
+
+                  <button
+                    type="button"
+                    className="deal-buy-button"
+                    onClick={() => handleBuyNow(book)}
+                  >
+                    🛒 Buy Now
+                  </button>
+
+                  <button
+                    type="button"
+                    className={
+                      isInCart(book.id)
+                        ? "deal-cart-button added"
+                        : "deal-cart-button"
+                    }
+                    onClick={() => addToCart(book.id, book.seller_id)}
+                    disabled={isInCart(book.id)}
+                  >
+                    {isInCart(book.id)
+                      ? "✓ In Cart"
+                      : "＋ Add to Cart"}
+                  </button>
+                </article>
+              ))}
+            </div>
+
+            <div className="all-books-more">
+              <Link
+                to="/books"
+                className="hero-btn primary-btn"
+              >
+                View All Books →
+              </Link>
+            </div>
+          </>
+        )}
+
       </section>
 
 
@@ -553,37 +904,37 @@ function Home() {
 
         <div className="category-grid">
 
-          <Link to="/books" className="category-card">
+          <Link to="/category/programming" className="category-card">
             <span>💻</span>
             <strong>Programming</strong>
             <small>Software & Coding</small>
           </Link>
 
-          <Link to="/books" className="category-card">
+          <Link to="/category/engineering" className="category-card">
             <span>⚙️</span>
             <strong>Engineering</strong>
             <small>Engineering Subjects</small>
           </Link>
 
-          <Link to="/books" className="category-card">
+          <Link to="/category/medical" className="category-card">
             <span>🩺</span>
             <strong>Medical</strong>
             <small>Medical Studies</small>
           </Link>
 
-          <Link to="/books" className="category-card">
+          <Link to="/category/mathematics" className="category-card">
             <span>📐</span>
             <strong>Mathematics</strong>
             <small>Math & Calculations</small>
           </Link>
 
-          <Link to="/books" className="category-card">
+          <Link to="/category/exam-prep" className="category-card">
             <span>🎯</span>
             <strong>Exam Prep</strong>
             <small>Competitive Exams</small>
           </Link>
 
-          <Link to="/books" className="category-card">
+          <Link to="/category/study-notes" className="category-card">
             <span>📝</span>
             <strong>Study Notes</strong>
             <small>Notes & Materials</small>
@@ -631,6 +982,142 @@ function Home() {
       </section>
 
 
+      {/* ================= FOOTER (Flipkart style) ================= */}
+      <footer className="site-footer">
+
+        <div className="site-footer-grid">
+
+          <div className="site-footer-col">
+            <h4>ABOUT</h4>
+            <ul>
+              <li><span>Contact Us</span></li>
+              <li><span>About Us</span></li>
+              <li><Link to="/sell">Sell Your Books</Link></li>
+              <li><Link to="/books">Buy Books</Link></li>
+              <li><span>Press</span></li>
+            </ul>
+          </div>
+
+          <div className="site-footer-col">
+            <h4>MARKETPLACE</h4>
+            <ul>
+              <li><Link to="/">Home</Link></li>
+              <li><Link to="/books">Books</Link></li>
+              <li><Link to="/sell">Sell</Link></li>
+              <li><Link to="/wishlist">Wishlist</Link></li>
+              <li><Link to="/cart">Cart</Link></li>
+              <li><Link to="/orders">Orders</Link></li>
+            </ul>
+          </div>
+
+          <div className="site-footer-col">
+            <h4>HELP</h4>
+            <ul>
+              <li><span>Payments</span></li>
+              <li><span>Shipping</span></li>
+              <li><span>Cancellation & Returns</span></li>
+              <li><span>FAQ</span></li>
+            </ul>
+          </div>
+
+          <div className="site-footer-col">
+            <h4>CONSUMER POLICY</h4>
+            <ul>
+              <li><span>Cancellation & Returns</span></li>
+              <li><span>Terms Of Use</span></li>
+              <li><span>Security</span></li>
+              <li><span>Privacy</span></li>
+              <li><span>Sitemap</span></li>
+              <li><span>Grievance Redressal</span></li>
+            </ul>
+          </div>
+
+          <div className="site-footer-col site-footer-contact">
+            <h4 className="site-footer-contact-heading">
+              Mail Us:
+            </h4>
+            <p>
+              Used Book Market,
+              <br />
+              College Street,
+              <br />
+              Kolkata, 700073,
+              <br />
+              West Bengal, India
+            </p>
+
+            <h4 className="site-footer-contact-heading">
+              Social:
+            </h4>
+            <div className="site-footer-social">
+              <a
+                href="https://facebook.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Facebook"
+              >
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+                  <path d="M13.5 21v-7h2.4l.4-3h-2.8V9.1c0-.9.3-1.5 1.6-1.5h1.3V4.9c-.3 0-1.1-.1-2.1-.1-2.1 0-3.6 1.3-3.6 3.7V11H8.2v3h2.5v7h2.8z" />
+                </svg>
+              </a>
+              <a
+                href="https://x.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="X"
+              >
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+                  <path d="M17.8 4h2.7l-6 6.8L21.5 20h-5.6l-4.3-5.6L6.6 20H3.9l6.4-7.3L3.6 4H9.3l3.9 5.1L17.8 4zm-1 14.3h1.5L8.1 5.6H6.5l10.3 12.7z" />
+                </svg>
+              </a>
+              <a
+                href="https://youtube.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="YouTube"
+              >
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+                  <path d="M21.6 7.2c-.2-1.2-1.1-2.1-2.3-2.3C17.3 4.5 12 4.5 12 4.5s-5.3 0-7.3.4c-1.2.2-2.1 1.1-2.3 2.3C2 9.2 2 12 2 12s0 2.8.4 4.8c.2 1.2 1.1 2.1 2.3 2.3 2 .4 7.3.4 7.3.4s5.3 0 7.3-.4c1.2-.2 2.1-1.1 2.3-2.3.4-2 .4-4.8.4-4.8s0-2.8-.4-4.8zM10 15.2V8.8L15.5 12 10 15.2z" />
+                </svg>
+              </a>
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
+              >
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+                  <path d="M12 8.8A3.2 3.2 0 1 0 12 15.2 3.2 3.2 0 0 0 12 8.8zm0-2.1a5.3 5.3 0 1 1 0 10.6 5.3 5.3 0 0 1 0-10.6zm6.8-.3a1.2 1.2 0 1 1-2.4 0 1.2 1.2 0 0 1 2.4 0zM12 4.2c-2.5 0-2.9 0-3.9.1-1 .1-1.6.2-2.1.4-.6.2-1 .5-1.4.9-.4.4-.7.8-.9 1.4-.2.5-.3 1.1-.4 2.1-.1 1-.1 1.4-.1 3.9s0 2.9.1 3.9c.1 1 .2 1.6.4 2.1.2.6.5 1 .9 1.4.4.4.8.7 1.4.9.5.2 1.1.3 2.1.4 1 .1 1.4.1 3.9.1s2.9 0 3.9-.1c1-.1 1.6-.2 2.1-.4.6-.2 1-.5 1.4-.9.4-.4.7-.8.9-1.4.2-.5.3-1.1.4-2.1.1-1 .1-1.4.1-3.9s0-2.9-.1-3.9c-.1-1-.2-1.6-.4-2.1-.2-.6-.5-1-.9-1.4-.4-.4-.8-.7-1.4-.9-.5-.2-1.1-.3-2.1-.4-1-.1-1.4-.1-3.9-.1z" />
+                </svg>
+              </a>
+            </div>
+          </div>
+
+          <div className="site-footer-col site-footer-contact">
+            <h4 className="site-footer-contact-heading">
+              Registered Office Address:
+            </h4>
+            <p>
+              Used Book Market,
+              <br />
+              College Street,
+              <br />
+              Kolkata, 700073,
+              <br />
+              West Bengal, India
+              <br />
+              Telephone:{" "}
+              <a href="tel:03345670000">
+                033-45670000
+              </a>
+            </p>
+          </div>
+
+        </div>
+
+      </footer>
+
+
       {/* ================= FOOTER MESSAGE ================= */}
       <section className="home-bottom">
 
@@ -639,7 +1126,7 @@ function Home() {
         </h3>
 
         <p>
-          Buy • Sell • Reuse • Help
+          Buy • Sell • Reuse • Help — © 2026
         </p>
 
       </section>

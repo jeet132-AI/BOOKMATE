@@ -10,12 +10,28 @@ const getAllOrders = async (req, res) => {
          o.product_id,
          o.seller_price,
          o.platform_fee,
+         o.delivery_charge,
          o.buyer_price,
          o.status,
          o.delivery_address,
          o.created_at,
 
          p.title AS product_title,
+         p.category AS product_category,
+         p.condition AS product_condition,
+         p.class_name AS product_class,
+
+         (
+           SELECT pi.image_url
+           FROM product_images pi
+           WHERE pi.product_id = p.id
+           ORDER BY pi.created_at ASC
+           LIMIT 1
+         ) AS product_image,
+
+         pay.payment_method,
+         pay.payment_status,
+         pay.transaction_id,
 
          buyer.name AS buyer_name,
          buyer.email AS buyer_email,
@@ -34,6 +50,9 @@ const getAllOrders = async (req, res) => {
 
        JOIN users seller
          ON p.seller_id = seller.id
+
+       LEFT JOIN payments pay
+         ON pay.order_id = o.id
 
        ORDER BY o.created_at DESC`
     );
@@ -69,12 +88,36 @@ const getAdminOrderById = async (
          o.product_id,
          o.seller_price,
          o.platform_fee,
+         o.delivery_charge,
          o.buyer_price,
          o.status,
          o.delivery_address,
          o.created_at,
 
          p.title AS product_title,
+         p.category AS product_category,
+         p.condition AS product_condition,
+         p.class_name AS product_class,
+
+         (
+           SELECT pi.image_url
+           FROM product_images pi
+           WHERE pi.product_id = p.id
+           ORDER BY pi.created_at ASC
+           LIMIT 1
+         ) AS product_image,
+
+         pay.payment_method,
+         pay.payment_status,
+         pay.transaction_id,
+         pay.amount AS payment_amount,
+         pay.paid_at AS payment_paid_at,
+
+         s.shipping_status,
+         s.tracking_number,
+         s.courier_name,
+         s.shipped_at,
+         s.delivered_at,
 
          buyer.name AS buyer_name,
          buyer.email AS buyer_email,
@@ -93,6 +136,12 @@ const getAdminOrderById = async (
 
        JOIN users seller
          ON p.seller_id = seller.id
+
+       LEFT JOIN payments pay
+         ON pay.order_id = o.id
+
+       LEFT JOIN shipping s
+         ON s.order_id = o.id
 
        WHERE o.id = $1`,
       [id]
@@ -159,6 +208,7 @@ const updateOrderStatus = async (
       await client.query(
         `SELECT
            o.id,
+           o.buyer_id,
            o.product_id,
            o.status,
            p.seller_id,
@@ -212,6 +262,20 @@ const updateOrderStatus = async (
                CURRENT_TIMESTAMP
              )
          WHERE order_id = $1`,
+        [id]
+      );
+
+      // Cash collected on delivery — settle COD payments
+      await client.query(
+        `UPDATE payments
+         SET payment_status = 'paid',
+             paid_at = COALESCE(
+               paid_at,
+               CURRENT_TIMESTAMP
+             )
+         WHERE order_id = $1
+         AND payment_status = 'pending'
+         AND payment_method = 'Cash on Delivery'`,
         [id]
       );
 
@@ -280,6 +344,40 @@ const updateOrderStatus = async (
         `Order #${id} for "${order.title}" is now ${status}.`,
       ]
     );
+
+    // Notify buyer so My Orders always reflects the latest stage
+    const buyerMessages = {
+      confirmed:
+        `Your order #${id} for "${order.title}" is confirmed and will be shipped soon.`,
+      shipped:
+        `Your order #${id} for "${order.title}" has been shipped and is on its way.`,
+      delivered:
+        `Your order #${id} for "${order.title}" has been delivered. Enjoy your book! You can now leave a review.`,
+      cancelled:
+        `Your order #${id} for "${order.title}" has been cancelled.`,
+    };
+
+    if (buyerMessages[status]) {
+      await client.query(
+        `INSERT INTO notifications
+         (
+           user_id,
+           title,
+           message
+         )
+         VALUES
+         (
+           $1,
+           $2,
+           $3
+         )`,
+        [
+          order.buyer_id,
+          "Order Status Updated",
+          buyerMessages[status],
+        ]
+      );
+    }
 
     await client.query("COMMIT");
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { bookImageUrl } from "../utils/bookImage";
 import "./Orders.css";
 
 function Orders() {
@@ -7,6 +8,7 @@ function Orders() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [cancellingId, setCancellingId] = useState(null);
 
   const fetchOrders = async () => {
     const token = localStorage.getItem("token");
@@ -71,6 +73,48 @@ function Orders() {
         return "status-cancelled";
       default:
         return "status-default";
+    }
+  };
+
+  const handleCancelOrder = async (orderId) => {
+    const confirmed = window.confirm(
+      "Cancel this order? The book will become available for others again."
+    );
+    if (!confirmed) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setMessage("Please login to cancel your order.");
+      return;
+    }
+
+    try {
+      setCancellingId(orderId);
+
+      const response = await fetch(
+        `http://localhost:5000/api/orders/${orderId}/cancel`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage(data.message || "Unable to cancel order.");
+        return;
+      }
+
+      setMessage(`Order #${orderId} cancelled. The book is back on sale.`);
+      await fetchOrders();
+    } catch (error) {
+      console.error("Cancel order error:", error);
+      setMessage("Unable to connect to server.");
+    } finally {
+      setCancellingId(null);
     }
   };
 
@@ -258,7 +302,14 @@ function Orders() {
                   {/* BOOK */}
                   <div className="order-book-section">
                     <div className="order-book-icon">
-                      📖
+                      {order.image_url ? (
+                        <img
+                          src={bookImageUrl(order.image_url)}
+                          alt={order.product_title || "Book"}
+                        />
+                      ) : (
+                        "📖"
+                      )}
                     </div>
 
                     <div className="order-book-info">
@@ -306,8 +357,46 @@ function Orders() {
                     </div>
                   </div>
 
+                  {order.delivery_charge !== undefined &&
+                    order.delivery_charge !== null &&
+                    Number(order.delivery_charge) >
+                      0 && (
+                      <p className="order-delivery-line">
+                        Incl. ₹
+                        {
+                          order.delivery_charge
+                        }{" "}
+                        delivery charge
+                      </p>
+                    )}
+
                   {/* DETAILS */}
                   <div className="order-details">
+                    {order.payment_method && (
+                      <div className="detail-item">
+                        <span>
+                          {order.payment_method === "UPI"
+                            ? "📱"
+                            : order.payment_method ===
+                                "Cash on Delivery"
+                              ? "💵"
+                              : "💳"}
+                        </span>
+
+                        <div>
+                          <small>PAYMENT</small>
+
+                          <p>
+                            {order.payment_method}
+                            {order.payment_status === "paid" &&
+                              " • ✅ Paid"}
+                            {order.transaction_id &&
+                              ` • UTR ${order.transaction_id}`}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="detail-item">
                       <span>📍</span>
 
@@ -387,17 +476,33 @@ function Orders() {
                       </Link>
                     )}
 
-                    {order.status === "delivered" && (
+                    {order.status === "delivered" &&
+                      order.product_id && (
+                        <Link
+                          to={`/reviews?product=${order.product_id}`}
+                        >
+                          <button
+                            type="button"
+                            className="review-button"
+                          >
+                            ⭐ Review Book
+                          </button>
+                        </Link>
+                      )}
+
+                    {(order.status === "pending" ||
+                      order.status === "confirmed") && (
                       <button
                         type="button"
-                        className="review-button"
+                        className="cancel-order-button"
+                        disabled={cancellingId === order.id}
                         onClick={() =>
-                          alert(
-                            "Review feature will be available soon."
-                          )
+                          handleCancelOrder(order.id)
                         }
                       >
-                        ⭐ Review Book
+                        {cancellingId === order.id
+                          ? "Cancelling..."
+                          : "❌ Cancel Order"}
                       </button>
                     )}
                   </div>

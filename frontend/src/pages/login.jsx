@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import useTheme from "../hooks/useTheme";
 import "./login.css";
 
 function Login() {
   const navigate = useNavigate();
+  const { darkMode, toggleTheme } = useTheme();
 
-  const [loginType, setLoginType] = useState("user");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -38,16 +39,6 @@ function Login() {
       const data = await response.json();
 
       if (!response.ok) {
-
-         if (loginType === "admin") {
-        setMessage(
-          "Account is restricted. Only admin accounts can access this section."
-        );
-        
-        setLoading(false);
-        return;
-      }
-
         setMessage(data.message || "Invalid email or password");
 
         if (
@@ -68,39 +59,21 @@ function Login() {
         setLoading(false);
         return;
       }
-      // ADMIN LOGIN
-      if (loginType === "admin") {
-        if (user?.role !== "admin") {
-          setMessage(
-            "Access denied. This account does not have admin permission."
-          );
-          setLoading(false);
-          return;
-        }
 
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(user));
-
-        window.location.href =   
-        `http://localhost:5174/?token=${encodeURIComponent(data.token)}`;
+      // Administrator accounts sign in through the
+      // separate Admin Panel, never here.
+      if (user?.role === "admin") {
+        setMessage(
+          "This is an administrator account. Please sign in through the Admin Panel."
+        );
+        setLoading(false);
         return;
       }
 
-      // USER LOGIN
-      if (loginType === "user") {
-        if (user?.role === "admin") {
-          setMessage(
-            "Please select ADMIN login for this account."
-          );
-          setLoading(false);
-          return;
-        }
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(user));
 
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(user));
-
-        navigate("/profile");
-      }
+      navigate("/profile");
     } catch (error) {
       console.error(error);
       setMessage(
@@ -113,6 +86,15 @@ function Login() {
 
   return (
     <div className="login-page">
+      <button
+        type="button"
+        className="page-theme-toggle"
+        onClick={toggleTheme}
+        aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+        aria-pressed={darkMode}
+      >
+        {darkMode ? "☀️ Light" : "🌙 Dark"}
+      </button>
 
       {/* Animated Background */}
       <div className="login-background">
@@ -142,17 +124,25 @@ function Login() {
           <div className="login-flow">
 
             <div className="flow-box">
-              <span className="flow-icon">👤</span>
-              <strong>USER</strong>
-              <small>Normal Login</small>
+              <span className="flow-icon">📖</span>
+              <strong>BUY</strong>
+              <small>Affordable books</small>
             </div>
 
             <div className="flow-arrow">→</div>
 
             <div className="flow-box">
-              <span className="flow-icon">👑</span>
-              <strong>ADMIN</strong>
-              <small>Restricted Login</small>
+              <span className="flow-icon">💰</span>
+              <strong>SELL</strong>
+              <small>Unused books</small>
+            </div>
+
+            <div className="flow-arrow">→</div>
+
+            <div className="flow-box">
+              <span className="flow-icon">♻️</span>
+              <strong>REUSE</strong>
+              <small>Help students</small>
             </div>
 
           </div>
@@ -177,73 +167,22 @@ function Login() {
         {/* Right Side */}
         <div className="login-card">
 
-          {/* Login Type */}
-          <div className="login-type-selector">
-
-            <button
-              type="button"
-              className={`login-type-button ${
-                loginType === "user" ? "active-user" : ""
-              }`}
-              onClick={() => {
-                setLoginType("user");
-                setMessage("");
-              }}
-            >
-              <span>👤</span>
-              <span>USER</span>
-            </button>
-
-            <button
-              type="button"
-              className={`login-type-button ${
-                loginType === "admin" ? "active-admin" : ""
-              }`}
-              onClick={() => {
-                setLoginType("admin");
-                setMessage("");
-              }}
-            >
-              <span>👑</span>
-              <span>ADMIN</span>
-            </button>
-
-          </div>
-
           {/* Heading */}
           <div className="login-card-header">
 
             <div className="login-card-icon">
-              {loginType === "admin" ? "👑" : "👤"}
+              👤
             </div>
 
             <h2>
-              {loginType === "admin"
-                ? "ADMIN LOGIN"
-                : "USER LOGIN"}
+              USER LOGIN
             </h2>
 
             <p>
-              {loginType === "admin"
-                ? "Restricted administrator access"
-                : "Login to your marketplace account"}
+              Login to your marketplace account
             </p>
 
           </div>
-
-          {/* Admin Notice */}
-          {loginType === "admin" && (
-            <div className="admin-notice">
-              <span>🔐</span>
-
-              <div>
-                <strong>Restricted Access</strong>
-                <small>
-                  Only authorized administrators can enter.
-                </small>
-              </div>
-            </div>
-          )}
 
           {/* Error / Message */}
           {message && (
@@ -252,7 +191,7 @@ function Login() {
             </div>
           )}
 
-          {accountNotFound && loginType === "user" && (
+          {accountNotFound && (
             <div className="account-not-found">
               <Link to="/register">
                 Register Now →
@@ -275,11 +214,7 @@ function Login() {
 
                 <input
                   type="email"
-                  placeholder={
-                    loginType === "admin"
-                      ? "Admin email"
-                      : "Enter your email"
-                  }
+                  placeholder="Enter your email"
                   value={email}
                   onChange={(e) =>
                     setEmail(e.target.value)
@@ -312,11 +247,7 @@ function Login() {
 
             <button
               type="submit"
-              className={`login-submit ${
-                loginType === "admin"
-                  ? "admin-submit"
-                  : ""
-              }`}
+              className="login-submit"
               disabled={loading}
             >
 
@@ -328,14 +259,10 @@ function Login() {
               ) : (
                 <>
                   <span>
-                    {loginType === "admin"
-                      ? "👑"
-                      : "🚀"}
+                    🚀
                   </span>
 
-                  {loginType === "admin"
-                    ? "ADMIN LOGIN"
-                    : "LOGIN"}
+                  LOGIN
                 </>
               )}
 
@@ -344,24 +271,15 @@ function Login() {
           </form>
 
           {/* User Register */}
-          {loginType === "user" && (
-            <div className="register-section">
+          <div className="register-section">
 
-              <span>Don't have an account?</span>
+            <span>Don't have an account?</span>
 
-              <Link to="/register">
-                Create Account
-              </Link>
+            <Link to="/register">
+              Create Account
+            </Link>
 
-            </div>
-          )}
-
-          {/* Admin Footer */}
-          {loginType === "admin" && (
-            <div className="admin-footer">
-              🔐 Authorized administrators only
-            </div>
-          )}
+          </div>
 
           {/* Back */}
           <button

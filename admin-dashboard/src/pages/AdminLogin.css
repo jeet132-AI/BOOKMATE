@@ -1,0 +1,214 @@
+/* =========================================================
+   ADMIN LOGIN — matches the admin control-center theme
+========================================================= */
+
+.admin-login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 18px;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      circle at 12% 15%,
+      rgba(20, 184, 166, 0.12),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 88% 80%,
+      rgba(249, 115, 22, 0.08),
+      transparent 30%
+    ),
+    linear-gradient(
+      135deg,
+      #07151a,
+      #0b1e24 50%,
+      #0a1418
+    );
+  color: #e8f1f2;
+  animation: adminLoginIn 0.6s ease both;
+}
+
+@keyframes adminLoginIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.admin-login-card {
+  width: min(430px, 100%);
+  padding: 42px 38px;
+  text-align: center;
+  border-radius: 24px;
+  border: 1px solid rgba(45, 212, 191, 0.2);
+  background: linear-gradient(
+    145deg,
+    rgba(15, 36, 42, 0.97),
+    rgba(8, 24, 29, 0.97)
+  );
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+  animation: adminLoginPop 0.7s
+    cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes adminLoginPop {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.admin-login-icon {
+  width: 84px;
+  height: 84px;
+  margin: 0 auto 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 24px;
+  background: linear-gradient(
+    145deg,
+    #14b8a6,
+    #0f766e
+  );
+  font-size: 42px;
+  box-shadow: 0 14px 34px
+    rgba(20, 184, 166, 0.35);
+  animation: adminLoginFloat 4s
+    ease-in-out infinite;
+}
+
+@keyframes adminLoginFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.admin-login-card h1 {
+  margin: 0;
+  color: #f1f5f9;
+  font-size: 1.7rem;
+  letter-spacing: -0.5px;
+}
+
+.admin-login-card h1 span {
+  color: #2dd4bf;
+}
+
+.admin-login-subtitle {
+  margin: 8px 0 26px;
+  color: #7d93a0;
+  font-size: 0.82rem;
+  letter-spacing: 2px;
+  font-weight: 800;
+}
+
+.admin-login-field {
+  margin-bottom: 14px;
+  text-align: left;
+}
+
+.admin-login-field label {
+  display: block;
+  margin-bottom: 7px;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.admin-login-field input {
+  width: 100%;
+  box-sizing: border-box;
+  height: 52px;
+  padding: 0 16px;
+  border-radius: 13px;
+  border: 1px solid
+    rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #f1f5f9;
+  font: inherit;
+  font-size: 0.9rem;
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.admin-login-field input:focus {
+  border-color: #14b8a6;
+  box-shadow: 0 0 0 3px
+    rgba(20, 184, 166, 0.15);
+}
+
+.admin-login-field input::placeholder {
+  color: #64748b;
+}
+
+.admin-login-button {
+  width: 100%;
+  min-height: 52px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 13px;
+  background: linear-gradient(
+    135deg,
+    #14b8a6,
+    #0f766e
+  );
+  color: #042523;
+  font-size: 0.95rem;
+  font-weight: 900;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+  box-shadow: 0 12px 28px
+    rgba(20, 184, 166, 0.25);
+}
+
+.admin-login-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px
+    rgba(20, 184, 166, 0.35);
+}
+
+.admin-login-message {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border-radius: 11px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid
+    rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.admin-login-footer {
+  margin: 22px 0 0;
+  color: #64748b;
+  font-size: 0.72rem;
+  letter-spacing: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-login-page,
+  .admin-login-card,
+  .admin-login-icon {
+    animation: none;
+  }
+}

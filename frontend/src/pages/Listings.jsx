@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { bookImageUrl } from "../utils/bookImage";
 import "./Listings.css";
 
 function Listings() {
@@ -290,7 +291,7 @@ function Listings() {
 
                     <img
                       src={
-                        `http://localhost:5000${listing.image_url}`
+                        bookImageUrl(listing.image_url)
                       }
                       alt={`${listing.title} front cover`}
                       className="listing-book-image"
@@ -315,6 +316,12 @@ function Listings() {
                     <div className="listing-category">
                       📚 {listing.category}
                     </div>
+
+                    {listing.class_name && (
+                      <div className="listing-category">
+                        🎓 {listing.class_name}
+                      </div>
+                    )}
 
                   </div>
 
@@ -411,7 +418,7 @@ function Listings() {
                           <div className="listing-extra-image-card">
 
                             <img
-                              src={`http://localhost:5000${backImage.image_url}`}
+                              src={bookImageUrl(backImage.image_url)}
                               alt={`${listing.title} back cover`}
                               className="listing-extra-image"
                             />
@@ -439,7 +446,7 @@ function Listings() {
                             </strong>
 
                             <a
-                              href={`http://localhost:5000${pdfFile.image_url}`}
+                              href={bookImageUrl(pdfFile.image_url)}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="listing-pdf-button"

@@ -1381,3 +1381,123 @@
     animation: none;
   }
 }
+
+/* =========================================
+   MIN / MAX LIMITS + CATEGORY RULES
+========================================= */
+
+.pricing-limits-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.pricing-limits-hint {
+  display: block;
+  margin-top: -6px;
+  color: #7d93a0;
+  font-size: 0.75rem;
+}
+
+.pricing-rules-section {
+  margin-top: 26px;
+  padding: 26px;
+  border-radius: 22px;
+  border: 1px solid rgba(45, 212, 191, 0.16);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.pricing-rule-form {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr auto;
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.pricing-rule-form select,
+.pricing-rule-form input {
+  min-height: 46px;
+  padding: 0 12px;
+  border-radius: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #e8f1f2;
+  font: inherit;
+  font-size: 0.85rem;
+  outline: none;
+}
+
+.pricing-rule-form select:focus,
+.pricing-rule-form input:focus {
+  border-color: #14b8a6;
+}
+
+.pricing-rule-form select option {
+  background: #0e2128;
+}
+
+.pricing-rule-form .save-pricing-button {
+  white-space: nowrap;
+}
+
+.pricing-rules-empty {
+  color: #7d93a0;
+  font-size: 0.85rem;
+}
+
+.pricing-rules-table-wrapper {
+  overflow-x: auto;
+}
+
+.pricing-rules-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.pricing-rules-table th,
+.pricing-rules-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.pricing-rules-table th {
+  color: #5eead4;
+  font-size: 0.72rem;
+  letter-spacing: 1px;
+}
+
+.pricing-rule-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pricing-rule-actions button {
+  padding: 7px 12px;
+  border-radius: 9px;
+  border: 1px solid rgba(45, 212, 191, 0.35);
+  background: rgba(20, 184, 166, 0.1);
+  color: #5eead4;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.pricing-rule-actions button:hover {
+  background: rgba(20, 184, 166, 0.2);
+}
+
+.pricing-rule-delete {
+  border-color: rgba(239, 68, 68, 0.35) !important;
+  background: rgba(239, 68, 68, 0.08) !important;
+  color: #fca5a5 !important;
+}
+
+@media (max-width: 700px) {
+  .pricing-limits-row,
+  .pricing-rule-form {
+    grid-template-columns: 1fr;
+  }
+}

@@ -21,6 +21,10 @@ const getAllPayouts = async (req, res) => {
 
          p.title AS product_title,
 
+         buyerPay.payment_method AS buyer_payment_method,
+         buyerPay.payment_status AS buyer_payment_status,
+         buyerPay.transaction_id AS buyer_transaction_id,
+
          seller.name AS seller_name,
          seller.email AS seller_email,
 
@@ -40,6 +44,9 @@ const getAllPayouts = async (req, res) => {
 
        JOIN users buyer
          ON o.buyer_id = buyer.id
+
+       LEFT JOIN payments buyerPay
+         ON buyerPay.order_id = o.id
 
        ORDER BY sp.created_at DESC`
     );
@@ -83,6 +90,10 @@ const getPayoutById = async (req, res) => {
 
          p.title AS product_title,
 
+         buyerPay.payment_method AS buyer_payment_method,
+         buyerPay.payment_status AS buyer_payment_status,
+         buyerPay.transaction_id AS buyer_transaction_id,
+
          seller.name AS seller_name,
          seller.email AS seller_email,
 
@@ -102,6 +113,9 @@ const getPayoutById = async (req, res) => {
 
        JOIN users buyer
          ON o.buyer_id = buyer.id
+
+       LEFT JOIN payments buyerPay
+         ON buyerPay.order_id = o.id
 
        WHERE sp.id = $1`,
       [id]

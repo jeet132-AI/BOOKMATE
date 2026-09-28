@@ -5,9 +5,20 @@ function AdminPricing() {
   const [settings, setSettings] = useState(null);
   const [feeType, setFeeType] = useState("fixed");
   const [feeValue, setFeeValue] = useState("");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [deliveryCharge, setDeliveryCharge] =
+    useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  const [rules, setRules] = useState([]);
+  const [ruleCategory, setRuleCategory] = useState("");
+  const [ruleFeeType, setRuleFeeType] = useState("fixed");
+  const [ruleFeeValue, setRuleFeeValue] = useState("");
+  const [savingRule, setSavingRule] = useState(false);
+  const [allCategories, setAllCategories] = useState([]);
 
   const fetchPricingSettings = async () => {
     const token = localStorage.getItem("token");
@@ -53,6 +64,18 @@ function AdminPricing() {
         setFeeValue(
           pricing.fee_value ?? ""
         );
+
+        setMinPrice(
+          pricing.min_seller_price ?? ""
+        );
+
+        setMaxPrice(
+          pricing.max_seller_price ?? ""
+        );
+
+        setDeliveryCharge(
+          pricing.delivery_charge ?? ""
+        );
       }
 
       setMessage("");
@@ -72,7 +95,67 @@ function AdminPricing() {
 
   useEffect(() => {
     fetchPricingSettings();
+    fetchPricingRules();
+    fetchAllCategories();
   }, []);
+
+  const fetchPricingRules = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/admin/pricing/rules",
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setRules(data.rules || []);
+      }
+    } catch (error) {
+      console.error(
+        "Pricing rules error:",
+        error
+      );
+    }
+  };
+
+  const fetchAllCategories = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/admin/categories",
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setAllCategories(
+          data.categories || []
+        );
+      }
+    } catch (error) {
+      console.error(
+        "Categories error:",
+        error
+      );
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -119,6 +202,51 @@ function AdminPricing() {
       return;
     }
 
+    const minValue =
+      minPrice === "" ? null : Number(minPrice);
+    const maxValue =
+      maxPrice === "" ? null : Number(maxPrice);
+    const deliveryValue =
+      deliveryCharge === ""
+        ? null
+        : Number(deliveryCharge);
+
+    if (
+      (minValue !== null &&
+        (Number.isNaN(minValue) ||
+          minValue < 0)) ||
+      (maxValue !== null &&
+        (Number.isNaN(maxValue) ||
+          maxValue < 0))
+    ) {
+      setMessage(
+        "Min/max price must be valid non-negative numbers"
+      );
+      return;
+    }
+
+    if (
+      minValue !== null &&
+      maxValue !== null &&
+      minValue > maxValue
+    ) {
+      setMessage(
+        "Minimum price cannot be greater than maximum price"
+      );
+      return;
+    }
+
+    if (
+      deliveryValue !== null &&
+      (Number.isNaN(deliveryValue) ||
+        deliveryValue < 0)
+    ) {
+      setMessage(
+        "Delivery charge must be a valid non-negative number"
+      );
+      return;
+    }
+
     try {
       setSaving(true);
       setMessage("");
@@ -134,6 +262,9 @@ function AdminPricing() {
           body: JSON.stringify({
             fee_type: feeType,
             fee_value: numericFee,
+            min_seller_price: minValue,
+            max_seller_price: maxValue,
+            delivery_charge: deliveryValue,
           }),
         }
       );
@@ -174,20 +305,218 @@ function AdminPricing() {
     }
   };
 
+  const handleSaveRule = async (e) => {
+    e.preventDefault();
+
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      setMessage("Admin login required");
+      return;
+    }
+
+    if (!ruleCategory) {
+      setMessage(
+        "Choose a category for the rule"
+      );
+      return;
+    }
+
+    const numericRuleFee = Number(
+      ruleFeeValue
+    );
+
+    if (
+      ruleFeeValue === "" ||
+      Number.isNaN(numericRuleFee) ||
+      numericRuleFee < 0
+    ) {
+      setMessage(
+        "Rule fee must be a valid non-negative number"
+      );
+      return;
+    }
+
+    if (
+      ruleFeeType === "percentage" &&
+      numericRuleFee > 100
+    ) {
+      setMessage(
+        "Percentage fee cannot be greater than 100"
+      );
+      return;
+    }
+
+    try {
+      setSavingRule(true);
+      setMessage("");
+
+      const response = await fetch(
+        "http://localhost:5000/api/admin/pricing/rules",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            category: ruleCategory,
+            fee_type: ruleFeeType,
+            fee_value: numericRuleFee,
+            is_active: true,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage(
+          data.message ||
+            "Unable to save category rule"
+        );
+        return;
+      }
+
+      setMessage(
+        "Category pricing rule saved successfully."
+      );
+
+      setRuleCategory("");
+      setRuleFeeValue("");
+
+      await fetchPricingRules();
+    } catch (error) {
+      console.error(
+        "Save rule error:",
+        error
+      );
+
+      setMessage(
+        "Unable to connect to server"
+      );
+    } finally {
+      setSavingRule(false);
+    }
+  };
+
+  const handleToggleRule = async (rule) => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      setMessage("Admin login required");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/admin/pricing/rules",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            category: rule.category,
+            fee_type: rule.fee_type,
+            fee_value: Number(rule.fee_value),
+            is_active: !rule.is_active,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage(
+          data.message ||
+            "Unable to update rule"
+        );
+        return;
+      }
+
+      await fetchPricingRules();
+    } catch (error) {
+      console.error(
+        "Toggle rule error:",
+        error
+      );
+
+      setMessage(
+        "Unable to connect to server"
+      );
+    }
+  };
+
+  const handleDeleteRule = async (rule) => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      setMessage("Admin login required");
+      return;
+    }
+
+    if (
+      !window.confirm(
+        `Delete the pricing rule for "${rule.category}"? Its books fall back to the global fee.`
+      )
+    )
+      return;
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/admin/pricing/rules/${rule.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage(
+          data.message ||
+            "Unable to delete rule"
+        );
+        return;
+      }
+
+      setMessage(
+        "Category pricing rule deleted successfully."
+      );
+
+      await fetchPricingRules();
+    } catch (error) {
+      console.error(
+        "Delete rule error:",
+        error
+      );
+
+      setMessage(
+        "Unable to connect to server"
+      );
+    }
+  };
+
   const calculateExample = () => {
     const sellerPrice = 100;
 
     const numericFee =
       Number(feeValue) || 0;
 
-    if (feeType === "percentage") {
-      return (
-        sellerPrice +
-        (sellerPrice * numericFee) / 100
-      );
-    }
+    const numericDelivery =
+      Number(deliveryCharge) || 0;
 
-    return sellerPrice + numericFee;
+    const fee =
+      feeType === "percentage"
+        ? (sellerPrice * numericFee) / 100
+        : numericFee;
+
+    return sellerPrice + fee + numericDelivery;
   };
 
   const exampleFee =
@@ -388,6 +717,106 @@ function AdminPricing() {
 
                 </div>
 
+                {/* Min / Max seller price limits */}
+                <div className="pricing-limits-row">
+
+                  <div className="pricing-field">
+
+                    <label htmlFor="min-price">
+                      Min Seller Price (₹)
+                    </label>
+
+                    <div className="pricing-input-wrapper">
+
+                      <span>₹</span>
+
+                      <input
+                        id="min-price"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={minPrice}
+                        onChange={(e) =>
+                          setMinPrice(
+                            e.target.value
+                          )
+                        }
+                        placeholder="No minimum"
+                      />
+
+                    </div>
+
+                  </div>
+
+                  <div className="pricing-field">
+
+                    <label htmlFor="max-price">
+                      Max Seller Price (₹)
+                    </label>
+
+                    <div className="pricing-input-wrapper">
+
+                      <span>₹</span>
+
+                      <input
+                        id="max-price"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={maxPrice}
+                        onChange={(e) =>
+                          setMaxPrice(
+                            e.target.value
+                          )
+                        }
+                        placeholder="No maximum"
+                      />
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+                <small className="pricing-limits-hint">
+                  Empty = no limit. Listings outside
+                  this range are rejected.
+                </small>
+
+                {/* Delivery charge */}
+                <div className="pricing-field">
+
+                  <label htmlFor="delivery-charge">
+                    Delivery Charge (₹)
+                  </label>
+
+                  <div className="pricing-input-wrapper">
+
+                    <span>₹</span>
+
+                    <input
+                      id="delivery-charge"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={deliveryCharge}
+                      onChange={(e) =>
+                        setDeliveryCharge(
+                          e.target.value
+                        )
+                      }
+                      placeholder="Example: 40"
+                    />
+
+                  </div>
+
+                  <small>
+                    Flat delivery fee added to every
+                    order. Empty = free delivery.
+                  </small>
+
+                </div>
+
                 {/* Save */}
                 <button
                   type="submit"
@@ -460,6 +889,21 @@ function AdminPricing() {
                   </strong>
                 </div>
 
+                <div className="calculation-row">
+                  <span>
+                    Delivery Charge
+                  </span>
+
+                  <strong>
+                    ₹
+                    {(
+                      Number(
+                        deliveryCharge
+                      ) || 0
+                    ).toFixed(2)}
+                  </strong>
+                </div>
+
                 <div className="calculation-line"></div>
 
                 <div className="calculation-row final-row">
@@ -482,8 +926,8 @@ function AdminPricing() {
                 <span>FORMULA</span>
 
                 <p>
-                  Seller Price + Platform Fee
-                  = Buyer Price
+                  Seller Price + Platform Fee +
+                  Delivery Charge = Buyer Price
                 </p>
 
               </div>
@@ -567,6 +1011,29 @@ function AdminPricing() {
                 <div className="current-pricing-item">
 
                   <div className="current-icon">
+                    🚚
+                  </div>
+
+                  <div>
+                    <p>
+                      Delivery Charge
+                    </p>
+
+                    <strong>
+                      {settings.delivery_charge ===
+                        null ||
+                      settings.delivery_charge ===
+                        undefined
+                        ? "FREE"
+                        : `₹${settings.delivery_charge}`}
+                    </strong>
+                  </div>
+
+                </div>
+
+                <div className="current-pricing-item">
+
+                  <div className="current-icon">
                     🧮
                   </div>
 
@@ -583,17 +1050,23 @@ function AdminPricing() {
                             settings.fee_value
                           ) || 0;
 
-                        const price =
+                        const delivery =
+                          Number(
+                            settings.delivery_charge
+                          ) || 0;
+
+                        const fee =
                           settings.fee_type ===
                           "percentage"
-                            ? 100 +
-                              (100 * value) /
-                                100
-                            : 100 + value;
+                            ? (100 * value) /
+                              100
+                            : value;
 
-                        return price.toFixed(
-                          2
-                        );
+                        return (
+                          100 +
+                          fee +
+                          delivery
+                        ).toFixed(2);
                       })()}
                     </strong>
                   </div>
@@ -643,6 +1116,179 @@ function AdminPricing() {
 
           </section>
 
+          {/* Category-wise pricing rules */}
+          <section className="pricing-rules-section">
+
+            <div className="current-pricing-heading">
+
+              <div>
+                <span>
+                  CATEGORY OVERRIDES
+                </span>
+
+                <h2>
+                  🏷️ Category Pricing Rules
+                </h2>
+              </div>
+
+            </div>
+
+            <p className="pricing-card-description">
+              A category rule overrides the
+              global fee for that category.
+              Inactive rules and categories
+              without rules use the global fee.
+            </p>
+
+            <form
+              className="pricing-rule-form"
+              onSubmit={handleSaveRule}
+            >
+
+              <select
+                value={ruleCategory}
+                onChange={(e) =>
+                  setRuleCategory(
+                    e.target.value
+                  )
+                }
+                required
+              >
+                <option value="" disabled>
+                  Choose category
+                </option>
+
+                {allCategories.map(
+                  (category) => (
+                    <option
+                      key={category.id}
+                      value={category.name}
+                    >
+                      {category.name}
+                    </option>
+                  )
+                )}
+              </select>
+
+              <select
+                value={ruleFeeType}
+                onChange={(e) =>
+                  setRuleFeeType(
+                    e.target.value
+                  )
+                }
+              >
+                <option value="fixed">
+                  Fixed ₹
+                </option>
+
+                <option value="percentage">
+                  Percentage %
+                </option>
+              </select>
+
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="Fee value"
+                value={ruleFeeValue}
+                onChange={(e) =>
+                  setRuleFeeValue(
+                    e.target.value
+                  )
+                }
+                required
+              />
+
+              <button
+                type="submit"
+                className="save-pricing-button"
+                disabled={savingRule}
+              >
+                {savingRule
+                  ? "Saving..."
+                  : "➕ Save Rule"}
+              </button>
+
+            </form>
+
+            {rules.length === 0 ? (
+              <p className="pricing-rules-empty">
+                No category rules yet — every
+                category uses the global fee.
+              </p>
+            ) : (
+              <div className="pricing-rules-table-wrapper">
+                <table className="pricing-rules-table">
+                  <thead>
+                    <tr>
+                      <th>Category</th>
+                      <th>Fee</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {rules.map((rule) => (
+                      <tr key={rule.id}>
+                        <td>
+                          <strong>
+                            {rule.category}
+                          </strong>
+                        </td>
+
+                        <td>
+                          {rule.fee_type ===
+                          "percentage"
+                            ? `${rule.fee_value}%`
+                            : `₹${rule.fee_value}`}
+                        </td>
+
+                        <td>
+                          {rule.is_active
+                            ? "✅ Active"
+                            : "⏸️ Inactive"}
+                        </td>
+
+                        <td>
+                          <div className="pricing-rule-actions">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleToggleRule(
+                                  rule
+                                )
+                              }
+                            >
+                              {rule.is_active
+                                ? "Deactivate"
+                                : "Activate"}
+                            </button>
+
+                            <button
+                              type="button"
+                              className="pricing-rule-delete"
+                              onClick={() =>
+                                handleDeleteRule(
+                                  rule
+                                )
+                              }
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+          </section>
+
           {/* Information */}
           <section className="pricing-info">
 
@@ -658,7 +1304,8 @@ function AdminPricing() {
               <p>
                 The seller sets the original
                 book price. The configured
-                platform fee is then added to
+                platform fee plus delivery
+                charge is then added to
                 calculate the buyer price.
               </p>
             </div>

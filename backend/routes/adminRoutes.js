@@ -15,8 +15,8 @@ const {
 } = require("../controllers/adminUserController");
 
 const adminOrderRoutes = require("./adminOrderRoutes");
-const adminPaymentRoutes = require("./adminPaymentRoutes");
-const adminShippingRoutes = require("./adminShippingRoutes");
+const adminReviewRoutes = require("./adminReviewRoutes");
+const adminPaymentRoutes = require("./adminPaymentRoutes");const adminShippingRoutes = require("./adminShippingRoutes");
 const adminPayoutRoutes = require("./adminPayoutRoutes");
 const adminCategoryRoutes = require("./adminCategoryRoutes");
 const adminReportRoutes = require("./adminReportRoutes");
@@ -78,6 +78,15 @@ router.get(
 router.use(
   "/orders",
   adminOrderRoutes
+);
+
+
+
+// ADMIN REVIEW MANAGEMENT
+
+router.use(
+  "/reviews",
+  adminReviewRoutes
 );
 
 
