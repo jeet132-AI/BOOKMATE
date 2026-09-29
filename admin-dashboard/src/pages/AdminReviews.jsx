@@ -9,6 +9,8 @@ function AdminReviews() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState(null);
+  const [selectedReviewId, setSelectedReviewId] =
+    useState(null);
 
   const fetchReviews = async () => {
     const token = localStorage.getItem("token");
@@ -158,6 +160,15 @@ function AdminReviews() {
       );
     }
   );
+
+  // Selected review for the ID-button details panel.
+  // Defaults to the first visible review.
+  const selectedReview =
+    filteredReviews.find(
+      (review) => review.id === selectedReviewId
+    ) ||
+    filteredReviews[0] ||
+    null;
 
   const averageRating = reviews.length
     ? reviews.reduce(
@@ -341,123 +352,113 @@ function AdminReviews() {
           </p>
         </div>
       ) : (
-        <div className="ap-table-wrapper">
-          <table className="ap-table">
-            <thead>
-              <tr>
-                <th>Review</th>
-                <th>Buyer</th>
-                <th>Book</th>
-                <th>Rating</th>
-                <th>Flag</th>
-                <th>Comment</th>
-                <th>Created</th>
-                <th>Action</th>
-              </tr>
-            </thead>
+        <>
+          {/* Review ID buttons — 5 per row */}
+          <div className="id-btn-grid">
+            {filteredReviews.map((review) => (
+              <button
+                key={review.id}
+                type="button"
+                className={
+                  selectedReview?.id === review.id
+                    ? "id-btn selected"
+                    : "id-btn"
+                }
+                onClick={() =>
+                  setSelectedReviewId(review.id)
+                }
+                aria-label={`Review ${review.id} details`}
+              >
+                #{review.id}
+              </button>
+            ))}
+          </div>
 
-            <tbody>
-              {filteredReviews.map(
-                (review) => (
-                  <tr key={review.id}>
-                    <td>
-                      <strong>
-                        #{review.id}
-                      </strong>
-                    </td>
+          {/* Selected review details */}
+          {selectedReview && (
+            <div className="id-details-panel">
+              <div className="id-details-panel-heading">
+                <strong>
+                  ⭐ Review #
+                  {selectedReview.id} —{" "}
+                  {selectedReview.product_title ||
+                    "Product removed"}
+                </strong>
 
-                    <td>
-                      <strong>
-                        {review.buyer_name ||
-                          "Unknown"}
-                      </strong>
-                      <small>
-                        {review.buyer_email ||
-                          ""}
-                      </small>
-                    </td>
+                <span className="ap-badge ap-badge-paid">
+                  {"★".repeat(
+                    Number(selectedReview.rating)
+                  )}
+                  {"☆".repeat(
+                    5 -
+                      Number(selectedReview.rating)
+                  )}
+                </span>
+              </div>
 
-                    <td>
-                      {review.product_title ||
-                        "Product removed"}{" "}
-                      <small>
-                        (#{review.product_id})
-                      </small>
-                    </td>
+              <div className="id-details-grid">
+                <div>
+                  <small>BUYER</small>
+                  <strong>
+                    {selectedReview.buyer_name ||
+                      "Unknown"}
+                  </strong>
+                </div>
+                <div>
+                  <small>RATING</small>
+                  <strong>
+                    ({selectedReview.rating}/5)
+                  </strong>
+                </div>
+                <div>
+                  <small>FLAG</small>
+                  <strong>
+                    {Number(
+                      selectedReview.open_report_count ||
+                        0
+                    ) > 0
+                      ? `🚩 ${selectedReview.open_report_count} open report(s)`
+                      : "—"}
+                  </strong>
+                </div>
+                <div>
+                  <small>CREATED</small>
+                  <strong>
+                    {new Date(
+                      selectedReview.created_at
+                    ).toLocaleString()}
+                  </strong>
+                </div>
+                <div>
+                  <small>COMMENT</small>
+                  <strong>
+                    {selectedReview.comment ||
+                      "No comment"}
+                  </strong>
+                </div>
+              </div>
 
-                    <td>
-                      <span className="ap-badge ap-badge-paid">
-                        {"★".repeat(
-                          Number(review.rating)
-                        )}
-                        {"☆".repeat(
-                          5 -
-                            Number(review.rating)
-                        )}
-                      </span>
-                      <small>
-                        ({review.rating}/5)
-                      </small>
-                    </td>
-
-                    <td>
-                      {Number(
-                        review.open_report_count ||
-                          0
-                      ) > 0 ? (
-                        <span
-                          className="ap-badge ap-badge-cancelled"
-                          title={`${review.open_report_count} open abuse report(s) on this book — check the Reports section`}
-                        >
-                          🚩{" "}
-                          {
-                            review.open_report_count
-                          }
-                        </span>
-                      ) : (
-                        <small>—</small>
-                      )}
-                    </td>
-
-                    <td>
-                      <small>
-                        {review.comment ||
-                          "No comment"}
-                      </small>
-                    </td>
-
-                    <td>
-                      <small>
-                        {new Date(
-                          review.created_at
-                        ).toLocaleString()}
-                      </small>
-                    </td>
-
-                    <td>
-                      <button
-                        type="button"
-                        className="ap-btn ap-btn-danger ap-btn-sm"
-                        disabled={
-                          deletingId ===
-                          review.id
-                        }
-                        onClick={() =>
-                          handleDelete(review.id)
-                        }
-                      >
-                        {deletingId ===
-                        review.id
-                          ? "Deleting..."
-                          : "Delete"}
-                      </button>
-                    </td>
-                  </tr>
-                )
-              )}
-            </tbody>
-          </table>
-        </div>
+              <div className="id-details-actions">
+                <button
+                  type="button"
+                  className="ap-btn ap-btn-danger ap-btn-sm"
+                  disabled={
+                    deletingId ===
+                    selectedReview.id
+                  }
+                  onClick={() =>
+                    handleDelete(selectedReview.id)
+                  }
+                >
+                  {deletingId ===
+                  selectedReview.id
+                    ? "Deleting..."
+                    : "Delete"}
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </main>
   );

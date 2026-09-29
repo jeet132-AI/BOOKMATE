@@ -6,6 +6,7 @@ function Profile() {
   const [user, setUser] = useState(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [profilePhoto, setProfilePhoto] = useState(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -37,6 +38,18 @@ function Profile() {
         }
 
         setUser(data.user);
+
+        // Load saved profile photo for this account (frontend-only).
+        try {
+          const photoKey = `profilePhoto_${
+            data.user?.email || data.user?.id || "guest"
+          }`;
+          setProfilePhoto(
+            localStorage.getItem(photoKey)
+          );
+        } catch (e) {
+          setProfilePhoto(null);
+        }
       } catch (error) {
         console.error("Profile error:", error);
         setMessage("Unable to connect to server");
@@ -47,6 +60,48 @@ function Profile() {
 
     fetchProfile();
   }, []);
+
+  const photoKey = `profilePhoto_${
+    user?.email || user?.id || "guest"
+  }`;
+
+  const handlePhotoChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setMessage("Please choose an image file");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setMessage("Photo must be under 2MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        localStorage.setItem(
+          photoKey,
+          reader.result
+        );
+      } catch (e) {
+        // storage full — still show preview
+      }
+      setProfilePhoto(reader.result);
+      setMessage("");
+    };
+    reader.readAsDataURL(file);
+    event.target.value = "";
+  };
+
+  const handlePhotoRemove = () => {
+    try {
+      localStorage.removeItem(photoKey);
+    } catch (e) {}
+    setProfilePhoto(null);
+  };
 
   const profileMenu = [
     {
@@ -111,11 +166,44 @@ function Profile() {
 
           <div className="profile-card-glow"></div>
 
-          <div className="profile-avatar">
-            {user
-              ? user.name?.charAt(0).toUpperCase()
-              : "?"}
+          <div className="profile-photo-wrap">
+            <div className="profile-avatar">
+              {profilePhoto ? (
+                <img
+                  src={profilePhoto}
+                  alt="Profile"
+                  className="profile-avatar-img"
+                />
+              ) : user ? (
+                user.name?.charAt(0).toUpperCase()
+              ) : (
+                "?"
+              )}
+            </div>
+
+            <label
+              className="profile-photo-edit"
+              title="Add / change photo"
+            >
+              📷
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                hidden
+              />
+            </label>
           </div>
+
+          {profilePhoto && (
+            <button
+              type="button"
+              className="profile-photo-remove"
+              onClick={handlePhotoRemove}
+            >
+              Remove photo
+            </button>
+          )}
 
           {loading && (
             <div className="profile-loading">

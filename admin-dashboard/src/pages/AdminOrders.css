@@ -562,6 +562,130 @@
   font-size: 15px;
 }
 
+/*
+   ORDER ID BUTTON GRID — 5 per row, no sliding table
+*/
+
+.order-id-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.order-id-btn {
+  min-height: 44px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  color: #93c5fd;
+  background: rgba(59, 130, 246, 0.1);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.order-id-btn:hover {
+  background: rgba(59, 130, 246, 0.2);
+}
+
+.order-id-btn:active {
+  transform: scale(0.95);
+}
+
+.order-id-btn.selected {
+  border-color: rgba(45, 212, 191, 0.5);
+  color: #5eead4;
+  background: rgba(20, 184, 166, 0.12);
+}
+
+/* Selected order details panel */
+.order-details-panel {
+  border-radius: 16px;
+  border: 1px solid rgba(45, 212, 191, 0.2);
+  background: rgba(20, 184, 166, 0.05);
+  padding: 14px;
+  animation: orderPanelIn 0.25s ease both;
+}
+
+@keyframes orderPanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.order-details-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: #f1f5f9;
+  font-size: 0.95rem;
+}
+
+.order-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.order-details-grid > div {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  min-width: 0;
+}
+
+.order-details-grid small {
+  display: block;
+  margin-bottom: 3px;
+  color: #2dd4bf;
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.order-details-grid strong {
+  display: block;
+  color: #f1f5f9;
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
+}
+
+.order-details-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 600px) {
+  .order-id-grid {
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .order-id-grid .order-id-btn {
+    min-height: 40px;
+    font-size: 11px;
+    padding: 6px 4px;
+  }
+
+  .order-details-panel {
+    padding: 10px;
+  }
+}
+
 /* 
    BOOK
  */

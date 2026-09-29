@@ -151,63 +151,6 @@ function AdminDashboard() {
     },
   ];
 
-  const sections = [
-    {
-      icon: "⏳",
-      label: "PENDING PRODUCTS",
-      desc: "Approve or reject new listings",
-      to: "/products/pending",
-    },
-    {
-      icon: "📦",
-      label: "ORDERS",
-      desc: "Confirm, ship and deliver orders",
-      to: "/orders",
-    },
-    {
-      icon: "🚚",
-      label: "SHIPPING",
-      desc: "Couriers, tracking and delivery",
-      to: "/shipping",
-    },
-    {
-      icon: "💰",
-      label: "PAYOUTS",
-      desc: "Pay sellers after delivery",
-      to: "/payouts",
-    },
-    {
-      icon: "💳",
-      label: "PAYMENTS",
-      desc: "Monitor buyer payments",
-      to: "/payments",
-    },
-    {
-      icon: "⭐",
-      label: "REVIEWS",
-      desc: "Buyer ratings and reports",
-      to: "/reviews",
-    },
-    {
-      icon: "🗂️",
-      label: "CATEGORIES",
-      desc: "Book categories and status",
-      to: "/categories",
-    },
-    {
-      icon: "📊",
-      label: "REPORTS",
-      desc: "Performance and abuse reports",
-      to: "/reports",
-    },
-    {
-      icon: "⚙️",
-      label: "PRICING",
-      desc: "Fees, limits and delivery charge",
-      to: "/pricing",
-    },
-  ];
-
   return (
     <main className="ap-page">
       <section className="ap-header">
@@ -259,30 +202,6 @@ function AdminDashboard() {
                   <span>{stat.icon}</span>
                   <small>{stat.label}</small>
                   <strong>{stat.value}</strong>
-                </div>
-              </Link>
-            ))}
-          </section>
-
-          <h2 className="ap-section-title">
-            Management Sections
-          </h2>
-
-          <section className="ap-summary">
-            {sections.map((section) => (
-              <Link
-                key={section.label}
-                to={section.to}
-                className="ap-stat-link"
-              >
-                <div className="ap-stat">
-                  <span>{section.icon}</span>
-                  <small>{section.label}</small>
-                  <strong
-                    style={{ fontSize: "0.85rem" }}
-                  >
-                    {section.desc}
-                  </strong>
                 </div>
               </Link>
             ))}

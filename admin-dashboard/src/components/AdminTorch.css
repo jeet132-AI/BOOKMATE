@@ -1,0 +1,71 @@
+/* =========================================
+   ADMIN TORCH-LIGHT CURSOR
+   Warm light follows the mouse like a torch.
+   Default cursor stays visible.
+   ========================================= */
+
+.admin-torch-glow {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 9990;
+  width: 340px;
+  height: 340px;
+  pointer-events: none;
+  opacity: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 226, 160, 0.22) 0%,
+    rgba(255, 190, 100, 0.12) 35%,
+    rgba(255, 170, 60, 0.05) 55%,
+    transparent 70%
+  );
+  mix-blend-mode: screen;
+  transition: opacity 0.3s ease, width 0.2s ease, height 0.2s ease;
+}
+
+/* Click flash — torch flares briefly */
+.admin-torch-glow.torch-flash {
+  width: 420px;
+  height: 420px;
+}
+
+/* Small bright torch tip at the exact cursor */
+.admin-torch-core {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 9991;
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+  opacity: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    #fff7e0 0%,
+    #ffd98a 45%,
+    rgba(255, 180, 80, 0.4) 75%,
+    transparent 100%
+  );
+  box-shadow:
+    0 0 12px rgba(255, 210, 130, 0.9),
+    0 0 32px rgba(255, 180, 80, 0.45);
+  transition: opacity 0.3s ease;
+}
+
+/* Touch devices: no torch */
+@media (pointer: coarse) {
+  .admin-torch-glow,
+  .admin-torch-core {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-torch-glow,
+  .admin-torch-core {
+    display: none;
+  }
+}

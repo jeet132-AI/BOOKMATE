@@ -1,0 +1,408 @@
+/* =========================================================
+   GLOBAL RESPONSIVE — ADMIN DASHBOARD
+   Loaded LAST. Every admin page + every table fits
+   mobile / tablet / desktop. Tables become small + scrollable.
+   ========================================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+body {
+  margin: 0;
+  min-width: 0;
+  -webkit-text-size-adjust: 100%;
+}
+
+#root {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: clip;
+}
+
+img,
+video,
+canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Any wrapper holding a table scrolls horizontally */
+div:has(> table),
+.table-responsive,
+.table-wrap,
+.admin-table-wrap,
+.ap-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+table,
+.ap-table,
+.admin-orders-table,
+.admin-payments-table,
+.products-table,
+.users-table,
+.pricing-rules-table,
+.admin-shipping-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th,
+td {
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.45;
+  text-align: left;
+  vertical-align: middle;
+  word-break: break-word;
+}
+
+input,
+select,
+textarea,
+button {
+  max-width: 100%;
+}
+
+/* ---------- 1024px: tablet landscape ---------- */
+@media (max-width: 1024px) {
+  #root {
+    padding: 0 16px;
+  }
+
+  h1 {
+    font-size: 30px !important;
+  }
+
+  table,
+  .ap-table,
+  .admin-orders-table,
+  .admin-payments-table,
+  .products-table,
+  .users-table,
+  .pricing-rules-table,
+  .admin-shipping-table {
+    font-size: 13px;
+    min-width: 640px;
+  }
+
+  th,
+  td {
+    padding: 9px 10px;
+    font-size: 13px;
+  }
+
+  .admin-navbar-inner {
+    gap: 12px;
+  }
+}
+
+/* ---------- 768px: tablet portrait ---------- */
+@media (max-width: 768px) {
+  #root {
+    padding: 0 12px;
+  }
+
+  /* Cards / panels stack */
+  [class*="grid"],
+  [class*="cards"],
+  [class*="stats"],
+  [class*="panel"] {
+    min-width: 0;
+  }
+
+  table,
+  .ap-table,
+  .admin-orders-table,
+  .admin-payments-table,
+  .products-table,
+  .users-table,
+  .pricing-rules-table,
+  .admin-shipping-table {
+    font-size: 12.5px !important;
+    min-width: 600px;
+  }
+
+  th,
+  td {
+    padding: 8px 9px !important;
+    font-size: 12.5px !important;
+    white-space: nowrap;
+  }
+
+  th:nth-child(n+3),
+  td:nth-child(n+3) {
+    white-space: normal;
+  }
+
+  div:has(> table) {
+    margin: 0 -12px;
+    padding: 0 12px 8px;
+    border-radius: 10px;
+  }
+
+  /* Dashboard 7 stats: 2 boxes per row on tablet */
+  .ap-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  .ap-stat {
+    padding: 14px !important;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px; /* prevents iOS zoom */
+  }
+}
+
+/* ---------- 600px: mobile ---------- */
+@media (max-width: 600px) {
+  body {
+    font-size: 14px;
+  }
+
+  #root {
+    padding: 0 10px;
+  }
+
+  h1 {
+    font-size: 24px !important;
+    margin: 16px 0 !important;
+  }
+
+  h2 {
+    font-size: 18px !important;
+  }
+
+  /* Admin pages: tighter top gap, small gutters */
+  .ap-page,
+  .admin-orders-page,
+  .admin-payments-page,
+  .admin-products-page,
+  .admin-users-page,
+  .admin-shipping-page,
+  .admin-pricing-page {
+    padding-top: 24px !important;
+    padding-bottom: 44px !important;
+  }
+
+  .admin-payments-page {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  /* Oversized page headers -> compact */
+  .ap-header-icon {
+    width: 56px !important;
+    height: 56px !important;
+    font-size: 28px !important;
+  }
+
+  .admin-orders-page h1,
+  .admin-payments-page h1 {
+    font-size: 26px !important;
+  }
+
+  table,
+  .ap-table,
+  .admin-orders-table,
+  .admin-payments-table,
+  .products-table,
+  .users-table,
+  .pricing-rules-table,
+  .admin-shipping-table {
+    font-size: 12px !important;
+    min-width: 520px;
+  }
+
+  th,
+  td {
+    padding: 7px 8px !important;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+  }
+
+  button,
+  .admin-nav-link,
+  .admin-logout-button {
+    min-height: 42px;
+  }
+
+  /* Filters / toolbars wrap */
+  [class*="toolbar"],
+  [class*="filter"],
+  [class*="actions"],
+  [class*="header"] {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  /* Orders / payments / shipping toolbars: kill fixed widths + nowrap */
+  .admin-orders-toolbar,
+  .admin-orders-controls,
+  .payments-controls,
+  .admin-shipping-controls {
+    flex-wrap: wrap !important;
+  }
+
+  .admin-search-box,
+  .payment-search-box,
+  .admin-shipping-controls .admin-search-box {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* Stat boxes: 2 per row, small (orders / shipping / products / payments) */
+  .admin-orders-summary,
+  .admin-shipping-summary,
+  .payments-summary,
+  .products-statistics {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .summary-item,
+  .payment-summary-card,
+  .product-stat-card {
+    padding: 12px 10px !important;
+    min-height: 0 !important;
+    border-radius: 12px !important;
+  }
+
+  /* Users stats already single-col — keep, just compact */
+  .user-stat-card {
+    padding: 16px !important;
+    min-height: 0 !important;
+  }
+
+  /* Forms: compact cards, stacked grids */
+  .ap-form-card {
+    padding: 14px !important;
+  }
+
+  .ap-form-grid,
+  .pricing-rule-form,
+  .pricing-limits-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Modals: fit phone */
+  .ap-modal,
+  .order-modal {
+    padding: 18px !important;
+    width: calc(100% - 20px) !important;
+  }
+
+  /* Login card: 42px 38px is too roomy on phones */
+  .admin-login-page {
+    padding: 20px 12px !important;
+  }
+
+  .admin-login-card {
+    padding: 28px 20px !important;
+  }
+
+  .ap-modal-photos img {
+    width: calc(50% - 6px) !important;
+    height: auto !important;
+    min-height: 120px;
+  }
+
+  /* Dashboard 7 stats: 2 boxes per row on phone, compact */
+  .ap-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .ap-stat {
+    padding: 12px 10px !important;
+    border-radius: 12px !important;
+  }
+
+  .ap-stat > span {
+    font-size: 1.2rem !important;
+  }
+
+  .ap-stat small {
+    font-size: 0.58rem !important;
+  }
+
+  .ap-stat strong {
+    font-size: 1.05rem !important;
+  }
+}
+
+/* ---------- 420px: small phones ---------- */
+@media (max-width: 420px) {
+  #root {
+    padding: 0 8px;
+  }
+
+  table,
+  .ap-table,
+  .admin-orders-table,
+  .admin-payments-table,
+  .products-table,
+  .users-table,
+  .pricing-rules-table,
+  .admin-shipping-table {
+    min-width: 480px;
+  }
+
+  th,
+  td {
+    padding: 6px 7px !important;
+    font-size: 11.5px !important;
+  }
+
+  /* Dashboard 2 per row on small phones, extra compact */
+  .ap-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  .ap-stat {
+    padding: 10px 8px !important;
+  }
+
+  /* Remaining stat grids stay 2 per row, extra compact */
+  .admin-orders-summary,
+  .admin-shipping-summary,
+  .payments-summary,
+  .products-statistics {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  .admin-login-card {
+    padding: 24px 16px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

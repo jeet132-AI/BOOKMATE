@@ -1,0 +1,1362 @@
+/* =========================================================
+   GLOBAL RESPONSIVE — USED BOOK MARKET (FRONTEND)
+   Loaded LAST so it wins over every page CSS.
+   Goal: every page fits every device, blocks/cards compact,
+   tables small + scrollable on mobile/tablet.
+   Breakpoints: 1024 / 768 / 600 / 420
+   ========================================================= */
+
+/* ---------- 1. Safety: no horizontal scroll, fluid media ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+body {
+  margin: 0;
+  min-width: 0;
+  -webkit-text-size-adjust: 100%;
+}
+
+#root {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100vh;
+  overflow-x: clip;
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+}
+
+img,
+video {
+  height: auto;
+}
+
+/* Every page wrapper: never wider than viewport */
+[class*="-page"],
+[class*="-scene"],
+.main-content {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.main-content {
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* ---------- 2a. NAVBAR-to-PAGE gap: one clean gap on every page ---------- */
+.main-content {
+  padding-top: 90px !important;
+}
+
+/* All pages: small top padding so navbar -> content looks tight but airy */
+.books-page,
+.book-details-page,
+.sell-page,
+.checkout-page,
+.profile-page,
+.dashboard-page,
+.orders-page,
+.listings-page,
+.wishlist-page,
+.reviews-page,
+.category-page,
+.cart-page {
+  padding-top: 28px !important;
+}
+
+/* Sticky search stays just below the fixed navbar */
+.books-sticky-top {
+  top: 86px !important;
+}
+
+/* ---------- 2b. HOME gap fix: remove blank space between navbar & hero ---------- */
+.main-content:has(.home-page) {
+  padding-top: 78px !important;
+}
+
+.home-page .home-hero {
+  padding-top: 28px !important;
+  padding-bottom: 48px !important;
+  min-height: 0 !important;
+}
+
+/* ---------- 2c. HOME extra blank space: tighten all sections ---------- */
+.home-page .purpose-section,
+.home-page .how-section,
+.home-page .action-section,
+.home-page .books-section,
+.home-page .story-section,
+.home-page .category-section {
+  padding-top: 64px !important;
+  padding-bottom: 64px !important;
+}
+
+.home-page .deals-section,
+.home-page .all-books-section {
+  padding-top: 56px !important;
+  padding-bottom: 56px !important;
+}
+
+.home-page .final-cta {
+  padding-top: 72px !important;
+  padding-bottom: 72px !important;
+}
+
+.home-page .section-heading {
+  margin-bottom: 36px !important;
+}
+
+.home-page .home-hero {
+  gap: 36px !important;
+}
+
+.home-page .hero-visual {
+  min-height: 480px !important;
+}
+
+.home-page .story-section {
+  gap: 48px !important;
+}
+
+.home-page .story-visual {
+  min-height: 400px !important;
+}
+
+/* ---------- 2. Fluid type: headings shrink on small screens ---------- */
+h1 {
+  font-size: clamp(24px, 5.5vw, 48px) !important;
+  line-height: 1.12 !important;
+  letter-spacing: -0.5px !important;
+  overflow-wrap: anywhere;
+}
+
+h2 {
+  font-size: clamp(19px, 4.2vw, 30px) !important;
+  line-height: 1.2 !important;
+  overflow-wrap: anywhere;
+}
+
+h3,
+h4 {
+  overflow-wrap: anywhere;
+}
+
+p,
+span,
+small,
+li,
+a,
+label,
+strong {
+  overflow-wrap: anywhere;
+}
+
+/* ---------- 3. Page paddings: 7% -> compact on mobile ---------- */
+.home-page,
+.books-page,
+.book-details-page,
+.sell-page,
+.checkout-page,
+.profile-page,
+.dashboard-page,
+.orders-page,
+.listings-page,
+.wishlist-page,
+.reviews-page,
+.category-page,
+.cart-page {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* Inner sections that used 70px 7% / 80px 7% */
+.home-hero,
+.books-page > *,
+.book-details-page > *,
+.sell-page > *,
+.checkout-page > *,
+.profile-page > *,
+.dashboard-page > *,
+.orders-page > *,
+.listings-page > *,
+.wishlist-page > *,
+.cart-page > * {
+  min-width: 0;
+}
+
+/* Generic section padding shrink */
+section,
+[class*="section"],
+[class*="container"],
+[class*="wrapper"],
+[class*="header"],
+[class*="toolbar"] {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* ---------- 4. Blocks / cards: compact + full-width on small ---------- */
+/* All cards share smaller padding/gap on mobile (see media queries below) */
+.book-card,
+.deal-card,
+.sample-book-card,
+.category-card,
+.purpose-card,
+.action-card,
+.buy-card,
+.sell-card,
+.reuse-card,
+.cart-card,
+.cart-summary,
+.cart-empty,
+.order-card,
+.listing-card,
+.listings-footer,
+.wishlist-card,
+.wishlist-footer,
+.wishlist-empty,
+.wishlist-login-card,
+.orders-empty,
+.orders-login-card,
+.orders-footer,
+.checkout-form-card,
+.checkout-summary-card,
+.checkout-success-card,
+.checkout-error-card,
+.details-container,
+.details-content,
+.book-information,
+.details-image-card,
+.price-section,
+.details-footer-card,
+.details-reviews-card,
+.profile-card,
+.profile-menu-card,
+.profile-info,
+.dashboard-card,
+.dashboard-footer,
+.sell-form,
+.book-images-section,
+.reviews-book-card,
+.reviews-form-card,
+.reviews-list-card,
+.reviews-error-card,
+.coming-soon-card,
+.books-toolbar,
+.class-section,
+.books-results-bar,
+.login-container,
+.register-card {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* ---------- 5. TABLES: small + scrollable everywhere ---------- */
+/* Any div directly holding a table becomes a scroll container */
+div:has(> table),
+.table-responsive,
+.table-wrap,
+.orders-table-wrap,
+.admin-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+table {
+  width: 100%;
+  max-width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+  font-size: 14px;
+}
+
+th,
+td {
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.45;
+  text-align: left;
+  vertical-align: middle;
+  word-break: break-word;
+}
+
+/* Div-based "table" rows (orders/listings/wishlist/cart/checkout) */
+.order-book-info,
+.price-item,
+.detail-item,
+.order-shipping-box,
+.listing-detail,
+.wishlist-info-grid,
+.cart-card-info,
+.summary-book,
+.summary-info,
+.order-detail-row {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Progress / status rows wrap instead of overflowing */
+.progress-step,
+[class*="progress"],
+[class*="toolbar"],
+[class*="filter"],
+.orders-filter,
+.checkout-step {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+/* ---------- 6. Grids & flex: collapse to 1 column on small ---------- */
+img {
+  object-fit: cover;
+}
+
+/* Forms: inputs never overflow */
+input,
+select,
+textarea,
+button {
+  max-width: 100%;
+  font-size: 16px; /* prevents iOS zoom */
+}
+
+input[type="text"],
+input[type="tel"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="search"],
+select,
+textarea {
+  width: 100%;
+  min-width: 0;
+}
+
+/* =========================================================
+   BREAKPOINT 1024px — small laptop / tablet landscape
+   ========================================================= */
+@media (max-width: 1024px) {
+  .main-content {
+    padding-top: 84px !important;
+  }
+
+  .main-content:has(.home-page) {
+    padding-top: 76px !important;
+  }
+
+  .home-hero {
+    padding: 24px 5% 40px !important;
+    gap: 28px !important;
+    min-height: 0 !important;
+  }
+
+  .home-page .purpose-section,
+  .home-page .how-section,
+  .home-page .action-section,
+  .home-page .books-section,
+  .home-page .story-section,
+  .home-page .category-section {
+    padding-top: 52px !important;
+    padding-bottom: 52px !important;
+  }
+
+  .home-page .deals-section,
+  .home-page .all-books-section {
+    padding-top: 44px !important;
+    padding-bottom: 44px !important;
+  }
+
+  .home-page .final-cta {
+    padding-top: 60px !important;
+    padding-bottom: 60px !important;
+  }
+
+  .home-page .section-heading {
+    margin-bottom: 30px !important;
+  }
+
+  .home-page .hero-visual {
+    min-height: 420px !important;
+  }
+
+  .books-page,
+  .book-details-page,
+  .sell-page,
+  .checkout-page,
+  .profile-page,
+  .dashboard-page,
+  .orders-page,
+  .listings-page,
+  .wishlist-page,
+  .reviews-page,
+  .category-page,
+  .cart-page {
+    padding-top: 24px !important;
+    padding-bottom: 56px !important;
+  }
+
+  .books-sticky-top {
+    top: 80px !important;
+  }
+
+  /* Grids: 3 cols -> 2 cols */
+  [style*="grid-template-columns"],
+  .books-grid,
+  .deals-grid,
+  .category-grid,
+  .purpose-grid,
+  .action-grid {
+    gap: 16px !important;
+  }
+
+  th,
+  td {
+    padding: 9px 10px;
+    font-size: 13px;
+  }
+}
+
+/* =========================================================
+   BREAKPOINT 768px — tablet portrait
+   Blocks stack, tables get scroll + small text
+   ========================================================= */
+@media (max-width: 768px) {
+  .main-content {
+    padding-top: 78px !important;
+  }
+
+  .main-content:has(.home-page) {
+    padding-top: 72px !important;
+  }
+
+  .books-page,
+  .book-details-page,
+  .sell-page,
+  .checkout-page,
+  .profile-page,
+  .dashboard-page,
+  .orders-page,
+  .listings-page,
+  .wishlist-page,
+  .reviews-page,
+  .category-page,
+  .cart-page {
+    padding-top: 20px !important;
+  }
+
+  .books-sticky-top {
+    top: 74px !important;
+  }
+
+  .home-hero {
+    grid-template-columns: 1fr !important;
+    padding: 20px 5% 32px !important;
+    gap: 20px !important;
+    text-align: center;
+  }
+
+  .home-page .purpose-section,
+  .home-page .how-section,
+  .home-page .action-section,
+  .home-page .books-section,
+  .home-page .story-section,
+  .home-page .category-section {
+    padding-top: 44px !important;
+    padding-bottom: 44px !important;
+  }
+
+  .home-page .deals-section,
+  .home-page .all-books-section {
+    padding-top: 36px !important;
+    padding-bottom: 36px !important;
+  }
+
+  .home-page .final-cta {
+    padding-top: 52px !important;
+    padding-bottom: 52px !important;
+  }
+
+  .home-page .section-heading {
+    margin-bottom: 26px !important;
+  }
+
+  .home-page .hero-visual {
+    min-height: 320px !important;
+  }
+
+  .home-page .story-section {
+    gap: 28px !important;
+  }
+
+  .home-page .story-visual {
+    min-height: 300px !important;
+  }
+
+  .home-page .hero-stats {
+    margin-top: 28px !important;
+    gap: 20px !important;
+  }
+
+  .hero-buttons {
+    justify-content: center;
+  }
+
+  .hero-description {
+    margin: 18px auto !important;
+    font-size: 15px !important;
+    line-height: 1.65 !important;
+  }
+
+  /* Every 2-col layout stacks (dashboard keeps 2-col) */
+  .details-container,
+  .checkout-container,
+  .profile-card,
+  .books-toolbar,
+  .orders-toolbar,
+  .wishlist-toolbar,
+  .listings-toolbar,
+  .checkout-steps {
+    grid-template-columns: 1fr !important;
+  }
+
+  .dashboard-page .dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  /* Flex rows stack */
+  .order-card,
+  .listing-card,
+  .wishlist-card,
+  .cart-card,
+  .reviews-book-card,
+  .details-content {
+    flex-direction: column !important;
+  }
+
+  /* Blocks: smaller padding + radius */
+  .book-card,
+  .deal-card,
+  .sample-book-card,
+  .category-card,
+  .purpose-card,
+  .action-card,
+  .cart-card,
+  .cart-summary,
+  .order-card,
+  .listing-card,
+  .wishlist-card,
+  .checkout-form-card,
+  .checkout-summary-card,
+  .details-content,
+  .book-information,
+  .price-section,
+  .profile-card,
+  .profile-menu-card,
+  .dashboard-card,
+  .sell-form,
+  .book-images-section,
+  .reviews-form-card,
+  .reviews-list-card,
+  .books-toolbar,
+  .class-section {
+    padding: 16px !important;
+    border-radius: 14px !important;
+    gap: 12px !important;
+  }
+
+  /* Tables: compact + scroll */
+  table {
+    font-size: 13px;
+    min-width: 560px;
+  }
+
+  div:has(> table) {
+    margin: 0 -16px;
+    padding: 0 16px 8px;
+  }
+
+  th,
+  td {
+    padding: 8px 9px !important;
+    font-size: 12.5px !important;
+    white-space: nowrap;
+  }
+
+  th:nth-child(n+3),
+  td:nth-child(n+3) {
+    white-space: normal;
+  }
+
+  /* Books: keep multi-col, compact cards on tablet */
+  .books-page .books-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  /* Home sample books tablet: 4 books = 2 per row */
+  .sample-books-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  /* Listings + Wishlist tablet: 2 per row, seller image visible */
+  .listings-page .listings-list,
+  .wishlist-page .wishlist-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  .listings-page .listing-book-image,
+  .listings-page .listing-book-image-placeholder {
+    height: 180px !important;
+    object-fit: cover !important;
+  }
+
+  .wishlist-page .wishlist-image-wrapper {
+    height: 180px !important;
+  }
+
+  /* Dashboard tablet: compact 2-col */
+  .dashboard-page .dashboard-card {
+    padding: 14px !important;
+    min-height: 0 !important;
+  }
+
+  .dashboard-page .dashboard-card-icon {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 21px !important;
+  }
+
+  .dashboard-page .card-content h2 {
+    font-size: 16px !important;
+  }
+
+  .dashboard-page .card-content p {
+    font-size: 12px !important;
+  }
+
+  .books-page .book-card {
+    padding: 0 !important;
+    border-radius: 12px !important;
+  }
+
+  .books-page .book-card-content {
+    padding: 10px !important;
+  }
+
+  /* Card images shrink */
+  .cart-card-photo,
+  .wishlist-photo,
+  .order-book-photo,
+  .listing-book-image,
+  .details-image-card img,
+  .book-image {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Forms full width */
+  .form-field,
+  .checkout-form-card label,
+  .payment-option,
+  .upi-section {
+    width: 100% !important;
+  }
+
+  .gateway-modal {
+    width: calc(100% - 24px) !important;
+    max-width: 480px !important;
+    margin: 12px auto !important;
+    padding: 18px !important;
+  }
+}
+
+/* =========================================================
+   BREAKPOINT 600px — mobile
+   Everything single-column, blocks/tables extra small
+   ========================================================= */
+@media (max-width: 600px) {
+  body {
+    font-size: 14px;
+  }
+
+  .main-content {
+    padding-top: 70px !important;
+  }
+
+  .main-content:has(.home-page) {
+    padding-top: 66px !important;
+  }
+
+  .home-hero {
+    padding: 18px 16px 28px !important;
+    gap: 16px !important;
+  }
+
+  .home-page .purpose-section,
+  .home-page .how-section,
+  .home-page .action-section,
+  .home-page .books-section,
+  .home-page .story-section,
+  .home-page .category-section {
+    padding-top: 36px !important;
+    padding-bottom: 36px !important;
+  }
+
+  .home-page .deals-section,
+  .home-page .all-books-section {
+    padding-top: 30px !important;
+    padding-bottom: 30px !important;
+  }
+
+  .home-page .final-cta {
+    padding-top: 44px !important;
+    padding-bottom: 44px !important;
+  }
+
+  .home-page .section-heading {
+    margin-bottom: 22px !important;
+  }
+
+  .home-page .section-heading p {
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+  }
+
+  .home-page .hero-visual {
+    min-height: 260px !important;
+  }
+
+  .home-page .hero-stats {
+    margin-top: 20px !important;
+    gap: 14px !important;
+  }
+
+  .home-page .hero-description {
+    margin: 14px 0 !important;
+  }
+
+  .home-page .story-section {
+    gap: 20px !important;
+  }
+
+  .home-page .story-visual {
+    min-height: 240px !important;
+  }
+
+  .hero-content h1 {
+    letter-spacing: -1px !important;
+  }
+
+  .hero-description {
+    font-size: 14px !important;
+  }
+
+  .hero-buttons a,
+  .hero-buttons button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Page outer gutters + tight top gap */
+  .books-page,
+  .book-details-page,
+  .sell-page,
+  .checkout-page,
+  .profile-page,
+  .dashboard-page,
+  .orders-page,
+  .listings-page,
+  .wishlist-page,
+  .reviews-page,
+  .category-page,
+  .cart-page {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    padding-top: 18px !important;
+  }
+
+  .books-page .books-sticky-top,
+  .books-sticky-top .books-toolbar {
+    top: 66px !important;
+  }
+
+  /* Blocks: extra compact */
+  .book-card,
+  .deal-card,
+  .sample-book-card,
+  .category-card,
+  .purpose-card,
+  .action-card,
+  .cart-card,
+  .cart-summary,
+  .cart-empty,
+  .order-card,
+  .listing-card,
+  .wishlist-card,
+  .wishlist-footer,
+  .wishlist-empty,
+  .orders-empty,
+  .orders-footer,
+  .checkout-form-card,
+  .checkout-summary-card,
+  .checkout-success-card,
+  .details-content,
+  .book-information,
+  .price-section,
+  .details-footer-card,
+  .details-reviews-card,
+  .profile-card,
+  .profile-menu-card,
+  .profile-info,
+  .dashboard-card,
+  .dashboard-footer,
+  .sell-form,
+  .book-images-section,
+  .reviews-book-card,
+  .reviews-form-card,
+  .reviews-list-card,
+  .books-toolbar,
+  .class-section,
+  .books-results-bar {
+    padding: 14px 12px !important;
+    border-radius: 12px !important;
+    gap: 10px !important;
+  }
+
+  /* Grids: always 1 col (books + dashboard + listings + wishlist stay 2-col - see below) */
+  .deals-grid,
+  .category-grid,
+  .purpose-grid,
+  .action-grid,
+  .orders-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* Dashboard phone: small boxes, 2 per row */
+  .dashboard-page .dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .dashboard-page .dashboard-card {
+    min-height: 0 !important;
+    padding: 10px !important;
+    border-radius: 12px !important;
+    gap: 0 !important;
+  }
+
+  .dashboard-page .dashboard-card-icon {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 18px !important;
+    border-radius: 10px !important;
+  }
+
+  .dashboard-page .card-top {
+    gap: 6px !important;
+  }
+
+  .dashboard-page .card-arrow {
+    font-size: 16px !important;
+  }
+
+  .dashboard-page .card-content {
+    margin-top: 10px !important;
+  }
+
+  .dashboard-page .card-content h2 {
+    font-size: 13px !important;
+    line-height: 1.3 !important;
+  }
+
+  .dashboard-page .card-content p {
+    font-size: 11px !important;
+    line-height: 1.5 !important;
+    margin: 4px 0 0 !important;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .dashboard-page .card-line {
+    margin-top: 8px !important;
+    margin-bottom: 8px !important;
+    width: 32px !important;
+  }
+
+  .dashboard-page .card-action {
+    font-size: 10px !important;
+    letter-spacing: 0.5px !important;
+    gap: 4px !important;
+  }
+
+  /* Books page phone: small cards, 2 books per row */
+  .books-page .books-grid,
+  .all-books-grid,
+  .sample-books-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .books-page {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .books-page .book-card {
+    border-radius: 10px !important;
+    padding: 0 !important;
+    gap: 0 !important;
+  }
+
+  .books-page .book-card-content {
+    padding: 8px !important;
+  }
+
+  .books-page .book-image {
+    min-height: 110px !important;
+  }
+
+  .books-page .book-category {
+    font-size: 9px !important;
+    padding: 3px 6px !important;
+    margin-bottom: 6px !important;
+  }
+
+  .books-page .book-class-chip {
+    font-size: 10px !important;
+    padding: 3px 8px !important;
+    margin-top: 4px !important;
+  }
+
+  .books-page .book-title {
+    font-size: 12px !important;
+    line-height: 1.3 !important;
+    min-height: 32px !important;
+    margin: 0 0 6px !important;
+  }
+
+  .books-page .book-pricing {
+    margin-top: 6px !important;
+    padding: 6px 8px !important;
+  }
+
+  .books-page .buyer-price-row strong {
+    font-size: 14px !important;
+  }
+
+  .books-page .view-details-btn,
+  .books-page .add-cart-btn {
+    min-height: 34px !important;
+    font-size: 11px !important;
+    padding: 8px 6px !important;
+    border-radius: 8px !important;
+    width: 100% !important;
+  }
+
+  .books-page .book-condition-badge {
+    font-size: 9px !important;
+    padding: 3px 6px !important;
+    top: 6px !important;
+    right: 6px !important;
+  }
+
+  .all-books-grid .deal-card {
+    padding: 8px !important;
+  }
+
+  .all-books-grid .deal-image {
+    height: 130px !important;
+  }
+
+  .all-books-grid .deal-card h3 {
+    font-size: 12px !important;
+    min-height: 32px !important;
+  }
+
+  .all-books-grid .deal-price {
+    font-size: 14px !important;
+  }
+
+  /* Home sample books phone: 4 books = 2 x 2, compact */
+  .sample-books-grid .sample-book-card {
+    border-radius: 12px !important;
+  }
+
+  .sample-books-grid .book-cover {
+    height: 150px !important;
+    padding: 14px !important;
+  }
+
+  .sample-books-grid .book-cover span {
+    font-size: 28px !important;
+  }
+
+  .sample-books-grid .book-cover strong {
+    font-size: 16px !important;
+  }
+
+  .sample-books-grid .sample-book-info {
+    padding: 10px !important;
+  }
+
+  .sample-books-grid .sample-book-info h3 {
+    font-size: 12px !important;
+  }
+
+  .sample-books-grid .sample-book-info p {
+    font-size: 11px !important;
+  }
+
+  .sample-books-grid .sample-book-info strong {
+    font-size: 14px !important;
+  }
+
+  /* Listings + Wishlist phone: 2 books per row, small cards, seller image visible */
+  .listings-page .listings-list,
+  .wishlist-page .wishlist-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .listings-page .listing-card,
+  .wishlist-page .wishlist-card {
+    min-height: 0 !important;
+    padding: 10px !important;
+    border-radius: 12px !important;
+  }
+
+  .listings-page .listing-book-image,
+  .listings-page .listing-book-image-placeholder {
+    height: 140px !important;
+    margin-top: 10px !important;
+    padding: 4px !important;
+    object-fit: cover !important;
+  }
+
+  .wishlist-page .wishlist-image-wrapper {
+    height: 140px !important;
+  }
+
+  .wishlist-page .wishlist-image {
+    object-fit: cover !important;
+  }
+
+  .listings-page .listing-card-content h2,
+  .wishlist-page .wishlist-card-content h2 {
+    font-size: 12px !important;
+    line-height: 1.3 !important;
+    margin: 0 0 6px !important;
+  }
+
+  .listings-page .listing-category,
+  .wishlist-page .wishlist-category {
+    font-size: 9px !important;
+    padding: 3px 6px !important;
+  }
+
+  .listings-page .listing-details,
+  .wishlist-page .wishlist-info-grid,
+  .wishlist-page .wishlist-pricing {
+    gap: 6px !important;
+    font-size: 11px !important;
+  }
+
+  .listings-page .listing-detail strong,
+  .wishlist-page .wishlist-info-grid strong {
+    font-size: 11px !important;
+  }
+
+  .listings-page .listing-card-bottom,
+  .wishlist-page .wishlist-actions {
+    gap: 6px !important;
+    flex-wrap: wrap !important;
+  }
+
+  .listings-page .listing-details-button,
+  .wishlist-page .view-wishlist-button {
+    min-height: 34px !important;
+    font-size: 11px !important;
+    padding: 8px 10px !important;
+  }
+
+  /* Tables: smallest readable size + horizontal scroll */
+  table {
+    font-size: 12px !important;
+    min-width: 520px;
+  }
+
+  th,
+  td {
+    padding: 7px 8px !important;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+  }
+
+  /* Buttons: full-width, compact height */
+  .add-cart-btn,
+  .deal-cart-button,
+  .checkout-primary-button,
+  .checkout-secondary-button,
+  .sell-submit-button,
+  .login-button,
+  .register-button,
+  .browse-more-button,
+  .wishlist-footer-button,
+  .orders-footer-button {
+    width: 100% !important;
+    min-height: 42px !important;
+    font-size: 14px !important;
+    padding: 11px 14px !important;
+  }
+
+  /* Price / summary rows wrap */
+  .price-row,
+  .price-total,
+  .total-row,
+  .summary-total-row,
+  .order-detail-row,
+  .detail-item {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    font-size: 13px !important;
+  }
+
+  /* Hide decorative floating blobs on tiny screens */
+  .orders-bg,
+  .orders-floating-book,
+  .hero-circle,
+  .story-circle,
+  .floating-book {
+    display: none !important;
+  }
+
+  /* Login / Register stack */
+  .login-container,
+  .register-card,
+  .login-info {
+    flex-direction: column !important;
+    padding: 18px 14px !important;
+  }
+
+  .page-theme-toggle {
+    top: 10px !important;
+    right: 10px !important;
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+  }
+}
+
+/* =========================================================
+   BREAKPOINT 420px — small phones
+   ========================================================= */
+@media (max-width: 420px) {
+  .main-content {
+    padding-top: 66px !important;
+  }
+
+  .main-content:has(.home-page) {
+    padding-top: 62px !important;
+  }
+
+  .home-hero {
+    padding: 16px 12px 24px !important;
+    gap: 14px !important;
+  }
+
+  .home-page .purpose-section,
+  .home-page .how-section,
+  .home-page .action-section,
+  .home-page .books-section,
+  .home-page .story-section,
+  .home-page .category-section {
+    padding-top: 28px !important;
+    padding-bottom: 28px !important;
+  }
+
+  .home-page .deals-section,
+  .home-page .all-books-section {
+    padding-top: 24px !important;
+    padding-bottom: 24px !important;
+  }
+
+  .home-page .final-cta {
+    padding-top: 36px !important;
+    padding-bottom: 36px !important;
+  }
+
+  .home-page .section-heading {
+    margin-bottom: 18px !important;
+  }
+
+  .home-page .hero-visual,
+  .home-page .story-visual {
+    min-height: 220px !important;
+  }
+
+  .books-page,
+  .book-details-page,
+  .sell-page,
+  .checkout-page,
+  .profile-page,
+  .dashboard-page,
+  .orders-page,
+  .listings-page,
+  .wishlist-page,
+  .reviews-page,
+  .category-page,
+  .cart-page {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    padding-top: 16px !important;
+  }
+
+  .book-card,
+  .deal-card,
+  .order-card,
+  .listing-card,
+  .wishlist-card,
+  .cart-card,
+  .checkout-form-card,
+  .checkout-summary-card,
+  .sell-form,
+  .profile-card {
+    padding: 12px 10px !important;
+    border-radius: 10px !important;
+    gap: 8px !important;
+  }
+
+  /* Dashboard: keep 2 per row on very small phones */
+  .dashboard-page .dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  .dashboard-page .dashboard-card {
+    min-height: 0 !important;
+    padding: 8px !important;
+    border-radius: 10px !important;
+  }
+
+  .dashboard-page .dashboard-card-icon {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 16px !important;
+  }
+
+  .dashboard-page .card-content h2 {
+    font-size: 12px !important;
+  }
+
+  .dashboard-page .card-content p {
+    font-size: 10.5px !important;
+  }
+
+  /* Keep 2 books per row on very small phones, extra compact */
+  .books-page .books-grid,
+  .all-books-grid,
+  .sample-books-grid,
+  .listings-page .listings-list,
+  .wishlist-page .wishlist-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  .sample-books-grid .book-cover {
+    height: 130px !important;
+  }
+
+  .listings-page .listing-card,
+  .wishlist-page .wishlist-card {
+    padding: 8px !important;
+  }
+
+  .listings-page .listing-book-image,
+  .listings-page .listing-book-image-placeholder,
+  .wishlist-page .wishlist-image-wrapper {
+    height: 120px !important;
+  }
+
+  .books-page .book-card-content {
+    padding: 6px !important;
+  }
+
+  .books-page .book-title {
+    font-size: 11px !important;
+    min-height: 30px !important;
+  }
+
+  .books-page .book-image {
+    min-height: 100px !important;
+  }
+
+  table {
+    min-width: 480px;
+  }
+
+  th,
+  td {
+    padding: 6px 7px !important;
+    font-size: 11.5px !important;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px !important; /* keep iOS no-zoom */
+    padding: 10px 12px !important;
+  }
+
+  .cart-notice {
+    left: 12px !important;
+    right: 12px !important;
+    transform: none !important;
+    max-width: none !important;
+    font-size: 12px !important;
+  }
+}
+
+/* ---------- Touch: larger tap targets but compact visuals ---------- */
+@media (pointer: coarse) {
+  a,
+  button,
+  .nav-link,
+  .class-btn {
+    min-height: 40px;
+  }
+}
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

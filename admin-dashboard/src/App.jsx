@@ -17,11 +17,13 @@ import AdminPricing from "./pages/AdminPricing";
 import AdminReviews from "./pages/AdminReviews";
 
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
+import AdminTorch from "./components/AdminTorch";
 
 
 function App() {
   return (
     <BrowserRouter>
+      <AdminTorch />
       <Routes>
 
         {/* Admin Login */}

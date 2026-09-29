@@ -647,6 +647,121 @@
   box-sizing: border-box;
 }
 
+/* ---------- ID button grid + details panel (no sliding tables) ---------- */
+
+.id-btn-grid {
+  max-width: 1200px;
+  margin: 0 auto 16px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.id-btn {
+  min-height: 44px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  color: #93c5fd;
+  background: rgba(59, 130, 246, 0.1);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.id-btn:hover {
+  background: rgba(59, 130, 246, 0.2);
+}
+
+.id-btn:active {
+  transform: scale(0.95);
+}
+
+.id-btn.selected {
+  border-color: rgba(45, 212, 191, 0.5);
+  color: #5eead4;
+  background: rgba(20, 184, 166, 0.12);
+}
+
+.id-details-panel {
+  max-width: 1200px;
+  margin: 0 auto;
+  border-radius: 16px;
+  border: 1px solid rgba(45, 212, 191, 0.2);
+  background: rgba(14, 33, 40, 0.85);
+  padding: 14px;
+  animation: apRise 0.25s ease both;
+}
+
+.id-details-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: #f1f5f9;
+  font-size: 0.95rem;
+}
+
+.id-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.id-details-grid > div {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  min-width: 0;
+}
+
+.id-details-grid small {
+  display: block;
+  margin-bottom: 3px;
+  color: #2dd4bf;
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.id-details-grid strong {
+  display: block;
+  color: #f1f5f9;
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
+}
+
+.id-details-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 600px) {
+  .id-btn-grid {
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .id-btn {
+    min-height: 40px;
+    font-size: 11px;
+    padding: 6px 4px;
+  }
+
+  .id-details-panel {
+    padding: 10px;
+  }
+}
+
 /* ---------- Table book cell ---------- */
 
 .ap-book-cell {

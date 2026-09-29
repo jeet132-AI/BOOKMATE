@@ -8,6 +8,8 @@ function AdminPayouts() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
+  const [selectedPayoutId, setSelectedPayoutId] =
+    useState(null);
 
   const fetchPayouts = async () => {
     const token = localStorage.getItem("token");
@@ -232,6 +234,15 @@ function AdminPayouts() {
         payout.payout_status === status
     ).length;
 
+  // Selected payout for the ID-button details panel.
+  // Defaults to the first visible payout.
+  const selectedPayout =
+    filteredPayouts.find(
+      (payout) => payout.id === selectedPayoutId
+    ) ||
+    filteredPayouts[0] ||
+    null;
+
   const badgeFor = (status) => {
     switch (status) {
       case "paid":
@@ -391,167 +402,158 @@ function AdminPayouts() {
           </p>
         </div>
       ) : (
-        <div className="ap-table-wrapper">
-          <table className="ap-table">
-            <thead>
-              <tr>
-                <th>Payout</th>
-                <th>Order</th>
-                <th>Seller</th>
-                <th>Sold Book</th>
-                <th>Amount</th>
-                <th>Buyer Payment Ref</th>
-                <th>Status</th>
-                <th>Payout Txn</th>
-                <th>Paid At</th>
-                <th>Action</th>
-              </tr>
-            </thead>
+        <>
+          {/* Payout ID buttons — 5 per row */}
+          <div className="id-btn-grid">
+            {filteredPayouts.map((payout) => (
+              <button
+                key={payout.id}
+                type="button"
+                className={
+                  selectedPayout?.id === payout.id
+                    ? "id-btn selected"
+                    : "id-btn"
+                }
+                onClick={() =>
+                  setSelectedPayoutId(payout.id)
+                }
+                aria-label={`Payout ${payout.id} details`}
+              >
+                #{payout.id}
+              </button>
+            ))}
+          </div>
 
-            <tbody>
-              {filteredPayouts.map(
-                (payout) => (
-                  <tr key={payout.id}>
-                    <td>
-                      <strong>
-                        #{payout.id}
-                      </strong>
-                      <small>
-                        {new Date(
-                          payout.created_at
-                        ).toLocaleString()}
-                      </small>
-                    </td>
+          {/* Selected payout details */}
+          {selectedPayout && (
+            <div className="id-details-panel">
+              <div className="id-details-panel-heading">
+                <strong>
+                  💰 Payout #
+                  {selectedPayout.id} — Order #
+                  {selectedPayout.order_id}
+                </strong>
 
-                    <td>
-                      <strong>
-                        #{payout.order_id}
-                      </strong>
-                    </td>
+                <span
+                  className={badgeFor(
+                    selectedPayout.payout_status
+                  )}
+                >
+                  {selectedPayout.payout_status}
+                </span>
+              </div>
 
-                    <td>
-                      <strong>
-                        {payout.seller_name ||
-                          "Unknown"}
-                      </strong>
-                      <small>
-                        {payout.seller_email ||
-                          ""}
-                      </small>
-                    </td>
+              <div className="id-details-grid">
+                <div>
+                  <small>SELLER</small>
+                  <strong>
+                    {selectedPayout.seller_name ||
+                      "Unknown"}
+                  </strong>
+                </div>
+                <div>
+                  <small>SOLD BOOK</small>
+                  <strong>
+                    {selectedPayout.product_title ||
+                      "Book removed"}
+                  </strong>
+                </div>
+                <div>
+                  <small>AMOUNT</small>
+                  <strong>
+                    ₹{selectedPayout.amount}
+                  </strong>
+                </div>
+                <div>
+                  <small>BUYER PAYMENT REF</small>
+                  <strong>
+                    {selectedPayout.buyer_payment_method
+                      ? `${selectedPayout.buyer_payment_method} • ${selectedPayout.buyer_payment_status || "pending"}`
+                      : "—"}
+                    {selectedPayout.buyer_transaction_id &&
+                      ` • UTR ${selectedPayout.buyer_transaction_id}`}
+                  </strong>
+                </div>
+                <div>
+                  <small>PAYOUT TXN</small>
+                  <strong>
+                    {selectedPayout.transaction_id ||
+                      "Not available"}
+                  </strong>
+                </div>
+                <div>
+                  <small>PAID AT</small>
+                  <strong>
+                    {selectedPayout.paid_at
+                      ? new Date(
+                          selectedPayout.paid_at
+                        ).toLocaleString()
+                      : "Not paid"}
+                  </strong>
+                </div>
+              </div>
 
-                    <td>
-                      {payout.product_title ||
-                        "Book removed"}
-                    </td>
+              <div className="id-details-actions">
+                {(selectedPayout.payout_status ===
+                  "pending" ||
+                  selectedPayout.payout_status ===
+                    "processing" ||
+                  selectedPayout.payout_status ===
+                    "failed") && (
+                  <>
+                    <button
+                      type="button"
+                      className="ap-btn ap-btn-success ap-btn-sm"
+                      disabled={
+                        updatingId ===
+                        selectedPayout.id
+                      }
+                      onClick={() =>
+                        handleMarkPaid(
+                          selectedPayout
+                        )
+                      }
+                      title={
+                        selectedPayout.order_status !==
+                        "delivered"
+                          ? `Order is ${selectedPayout.order_status || "not delivered"} — payout unlocks after delivery`
+                          : "Mark as paid"
+                      }
+                    >
+                      {updatingId ===
+                      selectedPayout.id
+                        ? "Saving..."
+                        : "✅ Paid"}
+                    </button>
 
-                    <td>
-                      <strong>
-                        ₹{payout.amount}
-                      </strong>
-                    </td>
+                    <button
+                      type="button"
+                      className="ap-btn ap-btn-danger ap-btn-sm"
+                      disabled={
+                        updatingId ===
+                        selectedPayout.id
+                      }
+                      onClick={() =>
+                        handleMarkFailed(
+                          selectedPayout
+                        )
+                      }
+                    >
+                      ❌ Failed
+                    </button>
+                  </>
+                )}
 
-                    <td>
-                      <small>
-                        {payout.buyer_payment_method
-                          ? `${payout.buyer_payment_method} • ${payout.buyer_payment_status || "pending"}`
-                          : "—"}
-                        {payout.buyer_transaction_id &&
-                          ` • UTR ${payout.buyer_transaction_id}`}
-                      </small>
-                    </td>
-
-                    <td>
-                      <span
-                        className={badgeFor(
-                          payout.payout_status
-                        )}
-                      >
-                        {payout.payout_status}
-                      </span>
-                    </td>
-
-                    <td>
-                      <small>
-                        {payout.transaction_id ||
-                          "Not available"}
-                      </small>
-                    </td>
-
-                    <td>
-                      <small>
-                        {payout.paid_at
-                          ? new Date(
-                              payout.paid_at
-                            ).toLocaleString()
-                          : "Not paid"}
-                      </small>
-                    </td>
-
-                    <td>
-                      {(payout.payout_status ===
-                        "pending" ||
-                        payout.payout_status ===
-                          "processing" ||
-                        payout.payout_status ===
-                          "failed") && (
-                        <div className="ap-actions">
-                          <button
-                            type="button"
-                            className="ap-btn ap-btn-success ap-btn-sm"
-                            disabled={
-                              updatingId ===
-                              payout.id
-                            }
-                            onClick={() =>
-                              handleMarkPaid(
-                                payout
-                              )
-                            }
-                            title={
-                              payout.order_status !==
-                              "delivered"
-                                ? `Order is ${payout.order_status || "not delivered"} — payout unlocks after delivery`
-                                : "Mark as paid"
-                            }
-                          >
-                            {updatingId ===
-                            payout.id
-                              ? "Saving..."
-                              : "✅ Paid"}
-                          </button>
-
-                          <button
-                            type="button"
-                            className="ap-btn ap-btn-danger ap-btn-sm"
-                            disabled={
-                              updatingId ===
-                              payout.id
-                            }
-                            onClick={() =>
-                              handleMarkFailed(
-                                payout
-                              )
-                            }
-                          >
-                            ❌ Failed
-                          </button>
-                        </div>
-                      )}
-
-                      {(payout.payout_status ===
-                        "paid" ||
-                        payout.payout_status ===
-                          "cancelled") && (
-                        <small>No action</small>
-                      )}
-                    </td>
-                  </tr>
-                )
-              )}
-            </tbody>
-          </table>
-        </div>
+                {(selectedPayout.payout_status ===
+                  "paid" ||
+                  selectedPayout.payout_status ===
+                    "cancelled") && (
+                  <small>No action</small>
+                )}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </main>
   );

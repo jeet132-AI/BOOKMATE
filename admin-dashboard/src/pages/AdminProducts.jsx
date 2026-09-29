@@ -7,6 +7,7 @@ function AdminProducts() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [selectedId, setSelectedId] = useState(null);
 
   const fetchProducts = async () => {
     const token = localStorage.getItem("token");
@@ -84,6 +85,15 @@ function AdminProducts() {
       );
     }
   );
+
+  // Selected product for the ID-button details panel.
+  // Defaults to the first visible product.
+  const selectedProduct =
+    filteredProducts.find(
+      (product) => product.id === selectedId
+    ) ||
+    filteredProducts[0] ||
+    null;
 
   const getStatusText = (status) => {
     if (status === "pending") {
@@ -388,165 +398,120 @@ function AdminProducts() {
 
         ) : filteredProducts.length > 0 ? (
 
-          <div className="products-table-wrapper">
+          <>
+            {/* ID buttons — 5 per row, click to see details */}
+            <div className="product-id-grid">
+              {filteredProducts.map((product) => (
+                <button
+                  key={product.id}
+                  type="button"
+                  className={
+                    selectedProduct?.id === product.id
+                      ? "product-id-btn selected"
+                      : "product-id-btn"
+                  }
+                  onClick={() =>
+                    setSelectedId(product.id)
+                  }
+                  aria-label={`Product ${product.id} details`}
+                >
+                  #{product.id}
+                </button>
+              ))}
+            </div>
 
-            <table className="products-table">
+            {/* Selected product details */}
+            {selectedProduct && (
+              <div className="product-details-panel">
+                <div className="product-details-panel-heading">
+                  <strong>
+                    #{selectedProduct.id} —{" "}
+                    {selectedProduct.title}
+                  </strong>
 
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Book</th>
-                  <th>Seller</th>
-                  <th>Email</th>
-                  <th>Category</th>
-                  <th>Condition</th>
-                  <th>Seller Price</th>
-                  <th>Location</th>
-                  <th>Status</th>
-                  <th>Created At</th>
-                </tr>
-              </thead>
+                  <span
+                    className={getStatusClass(
+                      selectedProduct.status
+                    )}
+                  >
+                    {getStatusText(
+                      selectedProduct.status
+                    )}
+                  </span>
+                </div>
 
-              <tbody>
-
-                {filteredProducts.map(
-                  (product, index) => (
-
-                    <tr
-                      key={product.id}
-                      style={{
-                        animationDelay:
-                          `${index * 0.06}s`,
-                      }}
-                    >
-
-                      {/* ID */}
-                      <td>
-                        <span className="product-id">
-                          #{product.id}
-                        </span>
-                      </td>
-
-                      {/* Book */}
-                      <td>
-                        <div className="product-name-cell">
-
-                          <div className="product-book-icon">
-                            📖
-                          </div>
-
-                          <div>
-                            <strong>
-                              {product.title}
-                            </strong>
-
-                            <small>
-                              Book Listing
-                            </small>
-                          </div>
-
-                        </div>
-                      </td>
-
-                      {/* Seller */}
-                      <td>
-                        <div className="seller-cell">
-
-                          <div className="seller-avatar">
-                            {(product.seller_name || "?")
-                              .charAt(0)
-                              .toUpperCase()}
-                          </div>
-
-                          <span>
-                            {product.seller_name}
-                          </span>
-
-                        </div>
-                      </td>
-
-                      {/* Email */}
-                      <td>
-                        <div className="product-email-cell">
-                          <span>📧</span>
-                          {product.seller_email}
-                        </div>
-                      </td>
-
-                      {/* Category */}
-                      <td>
-                        <span className="category-badge">
-                          {product.category}
-                        </span>
-                      </td>
-
-                      {/* Condition */}
-                      <td>
-                        <span className="condition-badge">
-                          {product.condition}
-                        </span>
-                      </td>
-
-                      {/* Price */}
-                      <td>
-                        <span className="seller-price">
-                          ₹{product.seller_price}
-                        </span>
-                      </td>
-
-                      {/* Location */}
-                      <td>
-                        <span className="location-cell">
-                          📍{" "}
-                          {product.location ||
-                            "Not provided"}
-                        </span>
-                      </td>
-
-                      {/* Status */}
-                      <td>
-                        <span
-                          className={getStatusClass(
-                            product.status
-                          )}
-                        >
-                          {product.status ===
-                            "pending" && "⏳"}
-
-                          {product.status ===
-                            "approved" && "✅"}
-
-                          {product.status ===
-                            "rejected" && "❌"}
-
-                          {" "}
-                          {getStatusText(
-                            product.status
-                          )}
-                        </span>
-                      </td>
-
-                      {/* Created At */}
-                      <td>
-                        <span className="product-date">
-                          {product.created_at
-                            ? new Date(
-                                product.created_at
-                              ).toLocaleString()
-                            : "N/A"}
-                        </span>
-                      </td>
-
-                    </tr>
-
-                  )
-                )}
-
-              </tbody>
-
-            </table>
-
-          </div>
+                <div className="product-details-grid">
+                  <div>
+                    <small>ID</small>
+                    <strong>
+                      #{selectedProduct.id}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>BOOK</small>
+                    <strong>
+                      {selectedProduct.title}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>SELLER</small>
+                    <strong>
+                      {selectedProduct.seller_name}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>EMAIL</small>
+                    <strong>
+                      {selectedProduct.seller_email}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>CATEGORY</small>
+                    <strong>
+                      {selectedProduct.category}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>CONDITION</small>
+                    <strong>
+                      {selectedProduct.condition}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>SELLER PRICE</small>
+                    <strong>
+                      ₹{selectedProduct.seller_price}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>LOCATION</small>
+                    <strong>
+                      {selectedProduct.location ||
+                        "Not provided"}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>STATUS</small>
+                    <strong>
+                      {getStatusText(
+                        selectedProduct.status
+                      )}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>CREATED AT</small>
+                    <strong>
+                      {selectedProduct.created_at
+                        ? new Date(
+                            selectedProduct.created_at
+                          ).toLocaleString()
+                        : "N/A"}
+                    </strong>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
 
         ) : (
 

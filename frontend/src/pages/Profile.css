@@ -240,10 +240,10 @@
 
   z-index: 2;
 
-  width: 105px;
-  height: 105px;
+  width: 140px;
+  height: 140px;
 
-  margin: 5px auto 20px;
+  margin: 5px auto 14px;
 
   display: flex;
 
@@ -251,6 +251,8 @@
   justify-content: center;
 
   border-radius: 50%;
+
+  overflow: hidden;
 
   background:
     linear-gradient(
@@ -263,7 +265,7 @@
 
   color: white;
 
-  font-size: 43px;
+  font-size: 52px;
   font-weight: 900;
 
   box-shadow:
@@ -271,6 +273,60 @@
     0 15px 35px rgba(20, 184, 166, 0.2);
 
   animation: avatarFloat 3s ease-in-out infinite;
+}
+
+.profile-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Photo upload circle wrapper */
+.profile-photo-wrap {
+  position: relative;
+  z-index: 2;
+  width: fit-content;
+  margin: 0 auto;
+}
+
+.profile-photo-edit {
+  position: absolute;
+  right: 6px;
+  bottom: 10px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #f59e0b;
+  border: 3px solid #0b1517;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(245, 158, 11, 0.4);
+  transition: transform 0.2s ease;
+}
+
+.profile-photo-edit:hover {
+  transform: scale(1.1);
+}
+
+.profile-photo-remove {
+  position: relative;
+  z-index: 2;
+  margin: 4px auto 0;
+  display: block;
+  background: transparent;
+  border: none;
+  color: #fca5a5;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.profile-photo-remove:hover {
+  text-decoration: underline;
 }
 
 
@@ -321,13 +377,13 @@
 
   z-index: 2;
 
-  margin-top: 30px;
+  margin-top: 20px;
 
   display: flex;
 
   flex-direction: column;
 
-  gap: 12px;
+  gap: 8px;
 }
 
 .profile-info-row {
@@ -335,15 +391,15 @@
 
   align-items: center;
 
-  gap: 14px;
+  gap: 10px;
 
-  padding: 13px;
+  padding: 10px 12px;
 
   text-align: left;
 
   border: 1px solid rgba(148, 163, 184, 0.09);
 
-  border-radius: 13px;
+  border-radius: 11px;
 
   background: rgba(255, 255, 255, 0.025);
 
@@ -957,8 +1013,23 @@
     padding: 28px 22px;
   }
 
+  /* Keep 2 + 2 + 1 on tablet */
   .profile-menu {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .profile-menu-card {
+    min-height: 120px;
+    padding: 14px;
+    grid-template-columns: 44px 1fr 16px;
+    gap: 10px;
+  }
+
+  .profile-menu-icon {
+    width: 44px;
+    height: 44px;
+    font-size: 21px;
   }
 }
 
@@ -992,8 +1063,49 @@
     padding: 30px 20px;
   }
 
+  /* Phone: 2 per row, then 2, then 1 (5 total) */
   .profile-menu {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .profile-menu-card {
+    min-height: 0;
+    padding: 12px 10px;
     grid-template-columns: 1fr;
+    text-align: center;
+    gap: 8px;
+  }
+
+  .profile-menu-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    margin: 0 auto;
+  }
+
+  .profile-menu-content h3 {
+    font-size: 13px;
+  }
+
+  .profile-menu-content p {
+    font-size: 10.5px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .profile-menu-arrow {
+    display: none;
+  }
+
+  /* Last single block: full width, centered */
+  .profile-menu-card:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    max-width: 60%;
+    margin: 0 auto;
+    width: 100%;
   }
 
   .profile-menu-header h2 {
@@ -1039,10 +1151,16 @@
   }
 
   .profile-avatar {
-    width: 90px;
-    height: 90px;
+    width: 110px;
+    height: 110px;
 
-    font-size: 36px;
+    font-size: 42px;
+  }
+
+  .profile-photo-edit {
+    width: 34px;
+    height: 34px;
+    font-size: 16px;
   }
 
   .profile-menu-card {

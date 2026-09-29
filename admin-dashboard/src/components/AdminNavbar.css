@@ -174,6 +174,12 @@
   flex-wrap: wrap;
 }
 
+.admin-nav-quick,
+.admin-nav-dropdown,
+.admin-menu-toggle {
+  display: none;
+}
+
 
 .admin-nav-link {
   position: relative;
@@ -517,30 +523,22 @@
 }
 
 
-@media (max-width: 800px) {
-  .admin-nav-links {
-    display: grid;
-
-    grid-template-columns:
-      repeat(3, minmax(0, 1fr));
-
-    width: 100%;
-  }
-
-  .admin-nav-link,
-  .admin-logout-button {
-    justify-content: center;
-  }
-}
-
-
-@media (max-width: 520px) {
+@media (max-width: 900px) {
   .admin-navbar-inner {
-    width: 94%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px;
   }
 
   .admin-navbar-brand {
+    justify-content: flex-start;
     min-width: 0;
+  }
+
+  .brand-3d-book {
+    width: 44px;
+    height: 44px;
   }
 
   .brand-text strong {
@@ -551,20 +549,67 @@
     font-size: 8px;
   }
 
-  .brand-3d-book {
-    width: 45px;
-    height: 45px;
-  }
-
   .admin-nav-links {
-    grid-template-columns:
-      repeat(2, minmax(0, 1fr));
+    display: none;
   }
 
-  .admin-nav-link,
-  .admin-logout-button {
+  .admin-nav-quick {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .admin-quick-link,
+  .admin-quick-logout {
+    flex: 1;
+    justify-content: center;
     min-height: 42px;
-    font-size: 11px;
+    font-size: 12px;
+  }
+
+  .admin-menu-toggle {
+    display: inline-flex;
+    flex: 0 0 auto;
+    width: 44px;
+    height: 42px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    border: 1px solid rgba(45, 212, 191, 0.45);
+    background: rgba(20, 184, 166, 0.15);
+    color: #5eead4;
+    font-size: 19px;
+    cursor: pointer;
+  }
+
+  .admin-nav-dropdown {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+    padding: 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(45, 212, 191, 0.25);
+    background: rgba(6, 21, 26, 0.97);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+  }
+
+  .admin-nav-dropdown .admin-nav-link {
+    justify-content: center;
+    min-height: 42px;
+    font-size: 12px;
+  }
+}
+
+
+@media (max-width: 520px) {
+  .admin-navbar-inner {
+    width: 94%;
+  }
+
+  .admin-nav-dropdown {
+    padding: 10px;
   }
 }
 

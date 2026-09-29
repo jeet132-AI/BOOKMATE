@@ -7,6 +7,8 @@ function AdminPayments() {
   const [search, setSearch] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [selectedPaymentId, setSelectedPaymentId] =
+    useState(null);
 
   const fetchPayments = async () => {
     const token = localStorage.getItem("token");
@@ -73,6 +75,15 @@ function AdminPayments() {
 
     return matchesSearch && matchesStatus;
   });
+
+  // Selected payment for the ID-button details panel.
+  // Defaults to the first visible payment.
+  const selectedPayment =
+    filteredPayments.find(
+      (payment) => payment.id === selectedPaymentId
+    ) ||
+    filteredPayments[0] ||
+    null;
 
   const getStatusClass = (status) => {
     switch (status) {
@@ -313,168 +324,101 @@ function AdminPayments() {
 
           </div>
         ) : (
-          <div className="admin-payments-table-wrapper">
+          <>
+            {/* Payment ID buttons — 5 per row */}
+            <div className="id-btn-grid">
+              {filteredPayments.map((payment) => (
+                <button
+                  key={payment.id}
+                  type="button"
+                  className={
+                    selectedPayment?.id ===
+                    payment.id
+                      ? "id-btn selected"
+                      : "id-btn"
+                  }
+                  onClick={() =>
+                    setSelectedPaymentId(payment.id)
+                  }
+                  aria-label={`Payment ${payment.id} details`}
+                >
+                  #{payment.id}
+                </button>
+              ))}
+            </div>
 
-            <table className="admin-payments-table">
+            {/* Selected payment details */}
+            {selectedPayment && (
+              <div className="id-details-panel">
+                <div className="id-details-panel-heading">
+                  <strong>
+                    💳 Payment #
+                    {selectedPayment.id} — Order #
+                    {selectedPayment.order_id}
+                  </strong>
 
-              <thead>
-                <tr>
-                  <th>Payment</th>
-                  <th>Order</th>
-                  <th>Buyer</th>
-                  <th>Amount</th>
-                  <th>Method</th>
-                  <th>Status</th>
-                  <th>Transaction</th>
-                  <th>Paid At</th>
-                  <th>Created</th>
-                </tr>
-              </thead>
+                  <span
+                    className={getStatusClass(
+                      selectedPayment.payment_status
+                    )}
+                  >
+                    <span className="status-dot"></span>
+                    {selectedPayment.payment_status}
+                  </span>
+                </div>
 
-              <tbody>
-
-                {filteredPayments.map(
-                  (payment, index) => (
-                    <tr
-                      key={payment.id}
-                      style={{
-                        animationDelay: `${index * 0.06}s`,
-                      }}
-                    >
-
-                      {/* Payment ID */}
-                      <td>
-                        <div className="payment-id-cell">
-
-                          <span className="payment-card-icon">
-                            💳
-                          </span>
-
-                          <strong>
-                            #{payment.id}
-                          </strong>
-
-                        </div>
-                      </td>
-
-                      {/* Order */}
-                      <td>
-                        <div className="order-payment-cell">
-
-                          <span>📦</span>
-
-                          <strong>
-                            #{payment.order_id}
-                          </strong>
-
-                        </div>
-                      </td>
-
-                      {/* Buyer */}
-                      <td>
-                        <div className="payment-buyer-cell">
-
-                          <div className="buyer-avatar">
-                            👤
-                          </div>
-
-                          <div>
-                            <strong>
-                              {payment.buyer_name ||
-                                "Unknown"}
-                            </strong>
-
-                            <small>
-                              {payment.buyer_email ||
-                                "-"}
-                            </small>
-                          </div>
-
-                        </div>
-                      </td>
-
-                      {/* Amount */}
-                      <td>
-                        <span className="payment-amount">
-                          ₹{Number(
-                            payment.amount || 0
-                          ).toFixed(2)}
-                        </span>
-                      </td>
-
-                      {/* Payment Method */}
-                      <td>
-                        <span className="payment-method">
-                          💳{" "}
-                          {payment.payment_method ||
-                            "Not provided"}
-                        </span>
-                      </td>
-
-                      {/* Status */}
-                      <td>
-                        <span
-                          className={getStatusClass(
-                            payment.payment_status
-                          )}
-                        >
-                          <span className="status-dot"></span>
-
-                          {payment.payment_status}
-                        </span>
-                      </td>
-
-                      {/* Transaction */}
-                      <td>
-                        <div className="transaction-cell">
-
-                          <span>🔐</span>
-
-                          <small>
-                            {payment.transaction_id ||
-                              "Not available"}
-                          </small>
-
-                        </div>
-                      </td>
-
-                      {/* Paid At */}
-                      <td>
-                        <div className="date-cell">
-
-                          <span>✓</span>
-
-                          {payment.paid_at
-                            ? new Date(
-                                payment.paid_at
-                              ).toLocaleString()
-                            : "Not paid"}
-
-                        </div>
-                      </td>
-
-                      {/* Created */}
-                      <td>
-                        <div className="date-cell">
-
-                          <span>🕒</span>
-
-                          {new Date(
-                            payment.created_at
-                          ).toLocaleString()}
-
-                        </div>
-                      </td>
-
-                    </tr>
-                  )
-                )}
-
-              </tbody>
-
-            </table>
-
-          </div>
+                <div className="id-details-grid">
+                  <div>
+                    <small>BUYER</small>
+                    <strong>
+                      {selectedPayment.buyer_name ||
+                        "Unknown"}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>AMOUNT</small>
+                    <strong>
+                      ₹{Number(
+                        selectedPayment.amount || 0
+                      ).toFixed(2)}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>METHOD</small>
+                    <strong>
+                      {selectedPayment.payment_method ||
+                        "Not provided"}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>TRANSACTION</small>
+                    <strong>
+                      {selectedPayment.transaction_id ||
+                        "Not available"}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>PAID AT</small>
+                    <strong>
+                      {selectedPayment.paid_at
+                        ? new Date(
+                            selectedPayment.paid_at
+                          ).toLocaleString()
+                        : "Not paid"}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>CREATED</small>
+                    <strong>
+                      {new Date(
+                        selectedPayment.created_at
+                      ).toLocaleString()}
+                    </strong>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
       </section>

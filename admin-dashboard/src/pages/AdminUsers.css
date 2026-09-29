@@ -849,6 +849,125 @@
 }
 
 /* =========================================
+   NAME BUTTON GRID — 5 per row, no sliding table
+   ========================================= */
+
+.user-name-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.user-name-btn {
+  min-height: 44px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(45, 212, 191, 0.3);
+  color: #5eead4;
+  background: rgba(20, 184, 166, 0.08);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.user-name-btn:hover {
+  background: rgba(20, 184, 166, 0.16);
+}
+
+.user-name-btn:active {
+  transform: scale(0.95);
+}
+
+.user-name-btn.selected {
+  border-color: rgba(45, 212, 191, 0.6);
+  background: rgba(20, 184, 166, 0.18);
+  color: #99f6e4;
+}
+
+/* Selected user details panel */
+.user-details-panel {
+  border-radius: 16px;
+  border: 1px solid rgba(45, 212, 191, 0.2);
+  background: rgba(20, 184, 166, 0.05);
+  padding: 14px;
+  animation: userPanelIn 0.25s ease both;
+}
+
+@keyframes userPanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.user-details-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: #f1f5f9;
+  font-size: 0.95rem;
+}
+
+.user-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.user-details-grid > div {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  min-width: 0;
+}
+
+.user-details-grid small {
+  display: block;
+  margin-bottom: 3px;
+  color: #2dd4bf;
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.user-details-grid strong {
+  display: block;
+  color: #f1f5f9;
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 600px) {
+  .user-name-grid {
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .user-name-btn {
+    min-height: 40px;
+    font-size: 11px;
+    padding: 6px 4px;
+  }
+
+  .user-details-panel {
+    padding: 10px;
+  }
+}
+
+/* =========================================
    LOADING
 ========================================= */
 

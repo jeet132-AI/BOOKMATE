@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./AdminNavbar.css";
 
 function AdminNavbar() {
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -10,6 +12,8 @@ function AdminNavbar() {
 
     navigate("/login");
   };
+
+  const closeMenu = () => setMenuOpen(false);
 
   const navItems = [
     { name: "Dashboard", path: "/", icon: "🏠" },
@@ -34,7 +38,7 @@ function AdminNavbar() {
 
       <div className="admin-navbar-inner">
 
-        <Link to="/" className="admin-navbar-brand">
+        <Link to="/" className="admin-navbar-brand" onClick={closeMenu}>
           <div className="brand-3d-book">
             <span>📚</span>
           </div>
@@ -45,12 +49,44 @@ function AdminNavbar() {
           </div>
         </Link>
 
+        {/* Phone top bar: Dashboard + Logout + Menu button */}
+        <div className="admin-nav-quick">
+          <Link
+            to="/"
+            className="admin-nav-link admin-quick-link"
+            onClick={closeMenu}
+          >
+            <span className="nav-link-icon">🏠</span>
+            <span>Dashboard</span>
+          </Link>
+
+          <button
+            type="button"
+            className="admin-logout-button admin-quick-logout"
+            onClick={handleLogout}
+          >
+            <span>🚪</span>
+            <span>Logout</span>
+          </button>
+
+          <button
+            type="button"
+            className="admin-menu-toggle"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+          >
+            {menuOpen ? "✕" : "☰"}
+          </button>
+        </div>
+
         <div className="admin-nav-links">
           {navItems.map((item) => (
             <Link
               key={item.name}
               to={item.path}
               className="admin-nav-link"
+              onClick={closeMenu}
             >
               <span className="nav-link-icon">
                 {item.icon}
@@ -62,13 +98,35 @@ function AdminNavbar() {
 
           <button
             type="button"
-            className="admin-logout-button"
+            className="admin-logout-button admin-full-logout"
             onClick={handleLogout}
           >
             <span>🚪</span>
             <span>Logout</span>
           </button>
         </div>
+
+        {/* Phone dropdown: all menus */}
+        {menuOpen && (
+          <div className="admin-nav-dropdown">
+            {navItems
+              .filter((item) => item.path !== "/")
+              .map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.path}
+                  className="admin-nav-link"
+                  onClick={closeMenu}
+                >
+                  <span className="nav-link-icon">
+                    {item.icon}
+                  </span>
+
+                  <span>{item.name}</span>
+                </Link>
+              ))}
+          </div>
+        )}
       </div>
 
       <div className="navbar-bottom-line"></div>

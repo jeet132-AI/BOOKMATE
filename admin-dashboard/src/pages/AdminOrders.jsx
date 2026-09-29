@@ -10,6 +10,8 @@ function AdminOrders() {
   const [updatingId, setUpdatingId] = useState(null);
   const [detailOrder, setDetailOrder] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] =
+    useState(null);
 
   const fetchOrders = async () => {
     const token = localStorage.getItem("token");
@@ -185,6 +187,15 @@ function AdminOrders() {
 
     return matchesSearch && matchesStatus;
   });
+
+  // Selected order for the ID-button details panel.
+  // Defaults to the first visible order.
+  const selectedOrder =
+    filteredOrders.find(
+      (order) => order.id === selectedOrderId
+    ) ||
+    filteredOrders[0] ||
+    null;
 
   const getStatusClass = (status) => {
     switch (status) {
@@ -411,239 +422,217 @@ function AdminOrders() {
             </span>
           </div>
         ) : (
-          <div className="admin-orders-table-wrapper">
-            <table className="admin-orders-table">
-              <thead>
-                <tr>
-                  <th>Order</th>
-                  <th>Book</th>
-                  <th>Buyer</th>
-                  <th>Seller</th>
-                  <th>Seller Price</th>
-                  <th>Platform Fee</th>
-                  <th>Buyer Price</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                  <th>Created</th>
-                </tr>
-              </thead>
+          <>
+            {/* Order ID buttons — 5 per row, click to see details */}
+            <div className="order-id-grid">
+              {filteredOrders.map((order) => (
+                <button
+                  key={order.id}
+                  type="button"
+                  className={
+                    selectedOrder?.id === order.id
+                      ? "order-id-btn selected"
+                      : "order-id-btn"
+                  }
+                  onClick={() =>
+                    setSelectedOrderId(order.id)
+                  }
+                  aria-label={`Order ${order.id} details`}
+                >
+                  #{order.id}
+                </button>
+              ))}
+            </div>
 
-              <tbody>
-                {filteredOrders.map(
-                  (order, index) => (
-                    <tr
-                      key={order.id}
-                      style={{
-                        animationDelay: `${
-                          index * 0.06
-                        }s`,
-                      }}
-                    >
-                      <td>
-                        <div className="order-id-cell">
-                          <span className="order-box-icon">
-                            📦
-                          </span>
+            {/* Selected order details */}
+            {selectedOrder && (
+              <div className="order-details-panel">
+                <div className="order-details-panel-heading">
+                  <strong>
+                    📦 Order #{selectedOrder.id} —{" "}
+                    {selectedOrder.product_title ||
+                      "Book"}
+                  </strong>
 
-                          <strong>
-                            #{order.id}
-                          </strong>
-                        </div>
-                      </td>
+                  <span
+                    className={getStatusClass(
+                      selectedOrder.status
+                    )}
+                  >
+                    <span className="status-dot"></span>
+                    {selectedOrder.status}
+                  </span>
+                </div>
 
-                      <td>
-                        <div className="book-cell">
-                          <strong>
-                            {order.product_title ||
-                              "Book"}
-                          </strong>
+                <div className="order-details-grid">
+                  <div>
+                    <small>BOOK</small>
+                    <strong>
+                      {selectedOrder.product_title ||
+                        "Book"}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>BUYER</small>
+                    <strong>
+                      {selectedOrder.buyer_name ||
+                        "Buyer"}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>SELLER</small>
+                    <strong>
+                      {selectedOrder.seller_name ||
+                        "Seller"}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>BUYER PRICE</small>
+                    <strong>
+                      ₹{selectedOrder.buyer_price}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>PAYMENT</small>
+                    <strong>
+                      {selectedOrder.payment_method ||
+                        "-"}
+                      {selectedOrder.payment_status ===
+                        "paid" && " • Paid"}
+                      {selectedOrder.payment_status ===
+                        "refunded" && " • Refunded"}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>CREATED</small>
+                    <strong>
+                      {selectedOrder.created_at
+                        ? new Date(
+                            selectedOrder.created_at
+                          ).toLocaleString()
+                        : "N/A"}
+                    </strong>
+                  </div>
+                </div>
 
-                          <small>
-                            Product ID:{" "}
-                            {order.product_id ||
-                              "-"}
-                          </small>
-
-                          {(order.product_category ||
-                            order.product_class) && (
-                            <small className="book-meta">
-                              {[
-                                order.product_category,
-                                order.product_class,
-                              ]
-                                .filter(Boolean)
-                                .join(" • ")}
-                            </small>
-                          )}
-                        </div>
-                      </td>
-
-                      <td>
-                        <div className="person-cell buyer-cell">
-                          <div className="person-avatar">
-                            👤
-                          </div>
-
-                          <div>
-                            <strong>
-                              {order.buyer_name ||
-                                "Buyer"}
-                            </strong>
-
-                            <small>
-                              {order.buyer_email ||
-                                "-"}
-                            </small>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td>
-                        <div className="person-cell">
-                          <div className="person-avatar seller-avatar">
-                            🧑
-                          </div>
-
-                          <div>
-                            <strong>
-                              {order.seller_name ||
-                                "Seller"}
-                            </strong>
-
-                            <small>
-                              {order.seller_email ||
-                                "-"}
-                            </small>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td>
-                        <span className="price-value">
-                          ₹{order.seller_price}
-                        </span>
-                      </td>
-
-                      <td>
-                        <span className="fee-value">
-                          ₹{order.platform_fee}
-                        </span>
-                      </td>
-
-                      <td>
-                        <span className="buyer-price-value">
-                          ₹{order.buyer_price}
-                        </span>
-
-                        {order.payment_method && (
-                          <small className="payment-meta">
-                            {order.payment_method}
-                            {order.payment_status ===
-                              "paid" && " • Paid"}
-                            {order.payment_status ===
-                              "refunded" && " • Refunded"}
-                          </small>
-                        )}
-                      </td>
-
-                      <td>
-                        <span
-                          className={getStatusClass(
-                            order.status
-                          )}
-                        >
-                          <span className="status-dot"></span>
-
-                          {order.status}
-                        </span>
-                      </td>
-
-                      <td>
-                        <div className="order-action-cell">
-                          <button
-                            type="button"
-                            className="order-action-button view-button"
-                            onClick={() => handleViewDetails(order.id)}
-                          >
-                            👀 View
-                          </button>
-                          {order.status === "pending" && (
-                            <>
-                              <button
-                                type="button"
-                                className="order-action-button confirm-button"
-                                disabled={updatingId === order.id}
-                                onClick={() => handleStatusUpdate(order.id, "confirmed")}
-                              >
-                                ✓ Confirm
-                              </button>
-                              <button
-                                type="button"
-                                className="order-action-button cancel-button"
-                                disabled={updatingId === order.id}
-                                onClick={() => handleStatusUpdate(order.id, "cancelled")}
-                              >
-                                ✕ Cancel
-                              </button>
-                            </>
-                          )}
-                          {order.status === "confirmed" && (
-                            <>
-                              <button
-                                type="button"
-                                className="order-action-button ship-button"
-                                disabled={updatingId === order.id}
-                                onClick={() => handleStatusUpdate(order.id, "shipped")}
-                                title="Click to shift this order to shipping"
-                              >
-                                {updatingId === order.id ? "Shipping..." : "🚚 Ship Now"}
-                              </button>
-                              <button
-                                type="button"
-                                className="order-action-button cancel-button"
-                                disabled={updatingId === order.id}
-                                onClick={() => handleStatusUpdate(order.id, "cancelled")}
-                              >
-                                ✕ Cancel
-                              </button>
-                            </>
-                          )}
-                          {order.status === "shipped" && (
-                            <>
-                              <button
-                                type="button"
-                                className="order-action-button deliver-button"
-                                disabled={updatingId === order.id}
-                                onClick={() => handleStatusUpdate(order.id, "delivered")}
-                              >
-                                ✓ Deliver
-                              </button>
-                              <a href="/shipping" className="shipping-link">
-                                Go to Shipping →
-                              </a>
-                            </>
-                          )}
-                          {(order.status === "delivered" || order.status === "cancelled") && (
-                            <span className="no-action-text">No action</span>
-                          )}
-                        </div>
-                      </td>
-
-                      <td>
-                        <div className="date-cell">
-                          <span>🕒</span>
-
-                          {new Date(
-                            order.created_at
-                          ).toLocaleString()}
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                )}
-              </tbody>
-            </table>
-          </div>
+                <div className="order-details-actions">
+                  <button
+                    type="button"
+                    className="order-action-button view-button"
+                    onClick={() =>
+                      handleViewDetails(selectedOrder.id)
+                    }
+                  >
+                    👀 Full Details
+                  </button>
+                  {selectedOrder.status ===
+                    "pending" && (
+                    <>
+                      <button
+                        type="button"
+                        className="order-action-button confirm-button"
+                        disabled={
+                          updatingId ===
+                          selectedOrder.id
+                        }
+                        onClick={() =>
+                          handleStatusUpdate(
+                            selectedOrder.id,
+                            "confirmed"
+                          )
+                        }
+                      >
+                        ✓ Confirm
+                      </button>
+                      <button
+                        type="button"
+                        className="order-action-button cancel-button"
+                        disabled={
+                          updatingId ===
+                          selectedOrder.id
+                        }
+                        onClick={() =>
+                          handleStatusUpdate(
+                            selectedOrder.id,
+                            "cancelled"
+                          )
+                        }
+                      >
+                        ✕ Cancel
+                      </button>
+                    </>
+                  )}
+                  {selectedOrder.status ===
+                    "confirmed" && (
+                    <>
+                      <button
+                        type="button"
+                        className="order-action-button ship-button"
+                        disabled={
+                          updatingId ===
+                          selectedOrder.id
+                        }
+                        onClick={() =>
+                          handleStatusUpdate(
+                            selectedOrder.id,
+                            "shipped"
+                          )
+                        }
+                      >
+                        {updatingId ===
+                        selectedOrder.id
+                          ? "Shipping..."
+                          : "🚚 Ship Now"}
+                      </button>
+                      <button
+                        type="button"
+                        className="order-action-button cancel-button"
+                        disabled={
+                          updatingId ===
+                          selectedOrder.id
+                        }
+                        onClick={() =>
+                          handleStatusUpdate(
+                            selectedOrder.id,
+                            "cancelled"
+                          )
+                        }
+                      >
+                        ✕ Cancel
+                      </button>
+                    </>
+                  )}
+                  {selectedOrder.status ===
+                    "shipped" && (
+                    <>
+                      <button
+                        type="button"
+                        className="order-action-button deliver-button"
+                        disabled={
+                          updatingId ===
+                          selectedOrder.id
+                        }
+                        onClick={() =>
+                          handleStatusUpdate(
+                            selectedOrder.id,
+                            "delivered"
+                          )
+                        }
+                      >
+                        ✓ Deliver
+                      </button>
+                      <a
+                        href="/shipping"
+                        className="shipping-link"
+                      >
+                        Go to Shipping →
+                      </a>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </section>
 

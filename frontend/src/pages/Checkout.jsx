@@ -37,6 +37,12 @@ const PAYMENT_METHODS = [
     title: "Wallet",
     desc: "Pay using a mobile wallet",
   },
+  {
+    value: "Cash on Delivery",
+    icon: "💵",
+    title: "Cash on Delivery",
+    desc: "Pay in cash when the book arrives",
+  },
 ];
 
 const NET_BANKS = [
@@ -173,9 +179,16 @@ function Checkout() {
   const isGatewayMethod = (method) =>
     ["Card", "Net Banking", "Wallet"].includes(method);
 
+  // COD needs no online verification — pay cash on delivery.
+  const isCod =
+    paymentMethod === "Cash on Delivery";
+
   const gatewayVerified =
     gatewayPaid !== null &&
     gatewayPaid.method === paymentMethod;
+
+  const paymentReady =
+    isCod || upiVerified || gatewayVerified;
 
   const handlePaymentMethodChange = (value) => {
     setPaymentMethod(value);
@@ -345,7 +358,8 @@ function Checkout() {
       return;
     }
 
-    // Every online method needs a verified payment before placing
+    // Every online method needs a verified payment before placing.
+    // COD orders are created unpaid — cash is collected on delivery.
     if (paymentMethod === "UPI" && !upiVerified) {
       setMessage(
         "Please pay using the UPI QR code and confirm your payment first."
@@ -363,14 +377,17 @@ function Checkout() {
       return;
     }
 
-    const paidReference =
-      paymentMethod === "UPI"
+    const paidReference = isCod
+      ? null
+      : paymentMethod === "UPI"
         ? utr.trim()
         : gatewayPaid.reference;
 
     // User confirms the order like Flipkart before placing
     const confirmed = window.confirm(
-      `Place order? ${paymentMethod} payment of ₹${buyerAmount} already verified (Ref ${paidReference}).\n\nDeliver to: ${form.fullName}, ${form.city} - ${form.pincode}`
+      isCod
+        ? `Place order? Pay ₹${buyerAmount} in CASH when your book arrives.\n\nDeliver to: ${form.fullName}, ${form.city} - ${form.pincode}`
+        : `Place order? ${paymentMethod} payment of ₹${buyerAmount} already verified (Ref ${paidReference}).\n\nDeliver to: ${form.fullName}, ${form.city} - ${form.pincode}`
     );
     if (!confirmed) return;
 
@@ -391,12 +408,17 @@ function Checkout() {
             product_id: Number(productId),
             delivery_address: deliveryAddress,
             payment_method: paymentMethod,
-            ...(paymentMethod === "UPI"
+            ...(!isCod &&
+            paymentMethod === "UPI"
               ? { upi_transaction_id: utr.trim() }
-              : {
+              : {}),
+            ...(!isCod &&
+            isGatewayMethod(paymentMethod)
+              ? {
                   payment_reference:
                     gatewayPaid.reference,
-                }),
+                }
+              : {}),
           }),
         }
       );
@@ -419,7 +441,9 @@ function Checkout() {
         paymentMethod,
       });
       setMessage(
-        `${paymentMethod} payment successful. Order placed successfully.`
+        isCod
+          ? "Order placed successfully. Pay in cash when your book arrives."
+          : `${paymentMethod} payment successful. Order placed successfully.`
       );
     } catch (error) {
       console.error("Checkout error:", error);
@@ -470,11 +494,15 @@ function Checkout() {
   if (order) {
     const paidMethod =
       placedAddress?.paymentMethod || paymentMethod;
+    const isPlacedCod =
+      paidMethod === "Cash on Delivery";
     const paidReference =
       placedPayment?.transaction_id ||
-      (paidMethod === "UPI"
+      (!isPlacedCod && paidMethod === "UPI"
         ? utr.trim()
-        : gatewayPaid?.reference) ||
+        : !isPlacedCod
+          ? gatewayPaid?.reference
+          : "") ||
       "";
     return (
       <main className="checkout-page">
@@ -488,7 +516,7 @@ function Checkout() {
           </div>
 
           <p className="checkout-label">
-            ORDER COMPLETED
+            ORDER CREATED
           </p>
 
           <h1>
@@ -496,9 +524,9 @@ function Checkout() {
           </h1>
 
           <p className="success-text">
-            {paidMethod} payment successful.
-            Your book order has been placed
-            and the book is reserved for you.
+            {isPlacedCod
+              ? "Your book order has been placed. Pay in cash when your book arrives — no online payment needed."
+              : `${paidMethod} payment successful. Your book order has been placed and the book is reserved for you.`}
           </p>
 
           <div className="success-divider"></div>
@@ -555,16 +583,20 @@ function Checkout() {
             <div className="order-detail-row">
               <span>Payment Method</span>
               <strong>
-                {paidMethod} 📱
+                {paidMethod}{" "}
+                {isPlacedCod ? "💵" : "📱"}
               </strong>
             </div>
 
             <div className="order-detail-row">
               <span>Payment Status</span>
               <strong className="status-text">
-                {placedPayment?.payment_status === "paid"
+                {placedPayment?.payment_status ===
+                "paid"
                   ? "✅ Paid"
-                  : "Paid"}
+                  : isPlacedCod
+                    ? "⏳ Pending — pay cash on delivery"
+                    : "Paid"}
               </strong>
             </div>
 
@@ -667,8 +699,9 @@ function Checkout() {
         <p>
           Add delivery address, review book
           price + delivery charge, pay with
-          UPI, Card, Net Banking or Wallet,
-          then place your order.
+          UPI, Card, Net Banking, Wallet or
+          Cash on Delivery, then place your
+          order.
         </p>
 
         <div className="checkout-header-line"></div>
@@ -695,10 +728,12 @@ function Checkout() {
 
         <div
           className={
-            upiVerified ? "checkout-step active" : "checkout-step"
+            paymentReady
+              ? "checkout-step active"
+              : "checkout-step"
           }
         >
-          <span>{upiVerified ? "✓" : "3"}</span>
+          <span>{paymentReady ? "✓" : "3"}</span>
           <p>Confirmation</p>
         </div>
 
@@ -950,6 +985,34 @@ function Checkout() {
               </div>
             )}
 
+            {isCod && (
+              <div className="upi-section">
+                <div className="upi-secure">
+                  <span>💵</span>
+                  <strong>
+                    Cash on Delivery
+                  </strong>
+                </div>
+
+                {buyerAmount !== null && !Number.isNaN(buyerAmount) && (
+                  <div className="upi-amount-row">
+                    <span>Pay on delivery</span>
+                    <strong>₹{buyerAmount}</strong>
+                  </div>
+                )}
+
+                <p className="cod-note">
+                  No online payment needed. Your
+                  order is created right away —
+                  keep ₹{buyerAmount ?? ""} in
+                  cash ready. Pay the courier
+                  when your book arrives, then
+                  the order is marked delivered
+                  and the seller gets paid.
+                </p>
+              </div>
+            )}
+
             {paymentMethod === "UPI" && (
               <div className="upi-section">
                 <div className="upi-secure">
@@ -1090,11 +1153,7 @@ function Checkout() {
               type="submit"
               className="place-order-button"
               disabled={
-                loading ||
-                (paymentMethod === "UPI" &&
-                  !upiVerified) ||
-                (isGatewayMethod(paymentMethod) &&
-                  !gatewayVerified)
+                loading || !paymentReady
               }
             >
               {loading ? (
@@ -1102,10 +1161,7 @@ function Checkout() {
                   <span className="button-spinner"></span>
                   Placing Order...
                 </>
-              ) : (paymentMethod === "UPI" &&
-                  !upiVerified) ||
-                (isGatewayMethod(paymentMethod) &&
-                  !gatewayVerified) ? (
+              ) : !paymentReady ? (
                 <>
                   🔒 Complete {paymentMethod} Payment
                   First

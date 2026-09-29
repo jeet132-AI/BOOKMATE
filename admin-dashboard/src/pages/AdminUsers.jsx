@@ -7,6 +7,8 @@ function AdminUsers() {
   const [roleFilter, setRoleFilter] = useState("All");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [selectedUserId, setSelectedUserId] =
+    useState(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -64,6 +66,15 @@ function AdminUsers() {
 
     return matchesSearch && matchesRole;
   });
+
+  // Selected user for the name-button details panel.
+  // Defaults to the first visible user.
+  const selectedUser =
+    filteredUsers.find(
+      (user) => user.id === selectedUserId
+    ) ||
+    filteredUsers[0] ||
+    null;
 
   const totalUsers = users.length;
   const normalUsers = users.filter(
@@ -276,95 +287,89 @@ function AdminUsers() {
           </div>
         ) : filteredUsers.length > 0 ? (
 
-          <div className="table-wrapper">
+          <>
+            {/* Name buttons — 5 per row, click to see details */}
+            <div className="user-name-grid">
+              {filteredUsers.map((user) => (
+                <button
+                  key={user.id}
+                  type="button"
+                  className={
+                    selectedUser?.id === user.id
+                      ? "user-name-btn selected"
+                      : "user-name-btn"
+                  }
+                  onClick={() =>
+                    setSelectedUserId(user.id)
+                  }
+                  title={`${user.name} (${user.email})`}
+                  aria-label={`User ${user.name} details`}
+                >
+                  {user.name || `User #${user.id}`}
+                </button>
+              ))}
+            </div>
 
-            <table className="users-table">
+            {/* Selected user details */}
+            {selectedUser && (
+              <div className="user-details-panel">
+                <div className="user-details-panel-heading">
+                  <strong>
+                    👤 {selectedUser.name}
+                  </strong>
 
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>User</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Created At</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {filteredUsers.map((user, index) => (
-                  <tr
-                    key={user.id}
-                    style={{
-                      animationDelay: `${index * 0.06}s`,
-                    }}
+                  <span
+                    className={`role-badge ${
+                      selectedUser.role === "admin"
+                        ? "admin-role"
+                        : "user-role"
+                    }`}
                   >
+                    {selectedUser.role === "admin"
+                      ? "🛡️ Admin"
+                      : "👤 User"}
+                  </span>
+                </div>
 
-                    <td>
-                      <span className="user-id">
-                        #{user.id}
-                      </span>
-                    </td>
-
-                    <td>
-                      <div className="user-name-cell">
-
-                        <div className="user-avatar">
-                          {(user.name || "?")
-                            .charAt(0)
-                            .toUpperCase()}
-                        </div>
-
-                        <div>
-                          <strong>
-                            {user.name}
-                          </strong>
-
-                          <small>
-                            Marketplace User
-                          </small>
-                        </div>
-
-                      </div>
-                    </td>
-
-                    <td>
-                      <div className="email-cell">
-                        <span>📧</span>
-                        {user.email}
-                      </div>
-                    </td>
-
-                    <td>
-                      <span
-                        className={`role-badge ${
-                          user.role === "admin"
-                            ? "admin-role"
-                            : "user-role"
-                        }`}
-                      >
-                        {user.role === "admin"
-                          ? "🛡️ Admin"
-                          : "👤 User"}
-                      </span>
-                    </td>
-
-                    <td>
-                      <span className="date-cell">
-                        {user.created_at
-                          ? new Date(
-                              user.created_at
-                            ).toLocaleString()
-                          : "N/A"}
-                      </span>
-                    </td>
-
-                  </tr>
-                ))}
-              </tbody>
-
-            </table>
-
-          </div>
+                <div className="user-details-grid">
+                  <div>
+                    <small>ID</small>
+                    <strong>
+                      #{selectedUser.id}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>NAME</small>
+                    <strong>
+                      {selectedUser.name}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>EMAIL</small>
+                    <strong>
+                      {selectedUser.email}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>ROLE</small>
+                    <strong>
+                      {selectedUser.role}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>CREATED AT</small>
+                    <strong>
+                      {selectedUser.created_at
+                        ? new Date(
+                            selectedUser.created_at
+                          ).toLocaleString()
+                        : "N/A"}
+                    </strong>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
 
         ) : (
 

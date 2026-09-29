@@ -61,16 +61,69 @@
   text-decoration: none;
   white-space: nowrap;
   animation: fadeSlideIn 0.5s 0.1s ease both;
-  transition: color 0.2s ease, transform 0.2s ease;
+  transition: transform 0.2s ease;
 }
 
 .navbar-logo:hover {
-  color: #e7644d;
   transform: scale(1.03);
 }
 
 .navbar-logo:active {
   transform: scale(0.97);
+}
+
+/* Dynamic 3-colour cycling for USED / BOOK / MARKET */
+.logo-word {
+  display: inline-block;
+  animation: logoColorCycle 6s ease-in-out infinite;
+}
+
+.logo-word-1 {
+  animation-delay: 0s;
+}
+
+.logo-word-2 {
+  animation-delay: 2s;
+}
+
+.logo-word-3 {
+  animation-delay: 4s;
+}
+
+@keyframes logoColorCycle {
+  0%,
+  100% {
+    color: #0f766e;
+    text-shadow: 0 0 8px rgba(20, 184, 166, 0.35);
+  }
+  33% {
+    color: #ea580c;
+    text-shadow: 0 0 8px rgba(249, 115, 22, 0.35);
+  }
+  66% {
+    color: #7c3aed;
+    text-shadow: 0 0 8px rgba(124, 58, 237, 0.35);
+  }
+}
+
+html[data-theme="dark"] .logo-word {
+  animation-name: logoColorCycleDark;
+}
+
+@keyframes logoColorCycleDark {
+  0%,
+  100% {
+    color: #2dd4bf;
+    text-shadow: 0 0 10px rgba(45, 212, 191, 0.5);
+  }
+  33% {
+    color: #fb923c;
+    text-shadow: 0 0 10px rgba(251, 146, 60, 0.5);
+  }
+  66% {
+    color: #c084fc;
+    text-shadow: 0 0 10px rgba(192, 132, 252, 0.5);
+  }
 }
 
 .nav-links {

@@ -16,6 +16,8 @@ function AdminShipping() {
   const [updating, setUpdating] = useState(false);
   const [trackingOrder, setTrackingOrder] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [selectedShipId, setSelectedShipId] =
+    useState(null);
 
   const COURIER_SUGGESTIONS = [
     "Delhivery",
@@ -323,6 +325,15 @@ function AdminShipping() {
   const countBy = (status) =>
     shipments.filter((item) => item.shipping_status === status).length;
 
+  // Selected shipment for the ID-button details panel.
+  // Defaults to the first visible shipment.
+  const selectedShipment =
+    filteredShipments.find(
+      (shipment) => shipment.id === selectedShipId
+    ) ||
+    filteredShipments[0] ||
+    null;
+
   return (
     <main className="admin-shipping-page">
       <div className="admin-shipping-bg bg-one"></div>
@@ -440,212 +451,287 @@ function AdminShipping() {
             <span>Try changing your search or status filter.</span>
           </div>
         ) : (
-          <div className="admin-shipping-table-wrapper">
-            <table className="admin-shipping-table">
-              <thead>
-                <tr>
-                  <th>Ship</th>
-                  <th>Order</th>
-                  <th>Buyer</th>
-                  <th>Courier</th>
-                  <th>Tracking</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredShipments.map((shipment, index) => (
-                  <tr
-                    key={shipment.id}
-                    style={{ animationDelay: `${index * 0.05}s` }}
+          <>
+            {/* Shipment ID buttons — 5 per row */}
+            <div className="id-btn-grid">
+              {filteredShipments.map((shipment) => (
+                <button
+                  key={shipment.id}
+                  type="button"
+                  className={
+                    selectedShipment?.id ===
+                    shipment.id
+                      ? "id-btn selected"
+                      : "id-btn"
+                  }
+                  onClick={() =>
+                    setSelectedShipId(shipment.id)
+                  }
+                  aria-label={`Shipment ${shipment.id} details`}
+                >
+                  #{shipment.id}
+                </button>
+              ))}
+            </div>
+
+            {/* Selected shipment details */}
+            {selectedShipment && (
+              <div className="id-details-panel">
+                <div className="id-details-panel-heading">
+                  <strong>
+                    🚚 Shipment #
+                    {selectedShipment.id} — Order
+                    #{selectedShipment.order_id}
+                  </strong>
+
+                  <span
+                    className={getStatusClass(
+                      selectedShipment.shipping_status
+                    )}
                   >
-                    <td>
-                      <div className="ship-id-cell">
-                        <span className="ship-box-icon">🚚</span>
-                        <strong>#{shipment.id}</strong>
-                      </div>
-                    </td>
-                    <td>
-                      <strong>#{shipment.order_id}</strong>
-                      <small className="order-book-name">
-                        {shipment.product_title || ""}
-                      </small>
-                      <small className="order-status-name">
-                        Order: {shipment.order_status || "—"}
-                      </small>
-                    </td>
-                    <td>
-                      <div className="person-cell">
-                        <div className="person-avatar">👤</div>
-                        <div>
-                          <strong>
-                            {shipment.buyer_name || "Buyer"}
-                          </strong>
-                          <small>{shipment.buyer_email || "-"}</small>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      {editingId === shipment.id ? (
+                    <span className="status-dot"></span>
+                    {
+                      selectedShipment.shipping_status
+                    }
+                  </span>
+                </div>
+
+                <div className="id-details-grid">
+                  <div>
+                    <small>BOOK</small>
+                    <strong>
+                      {selectedShipment.product_title ||
+                        "—"}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>BUYER</small>
+                    <strong>
+                      {selectedShipment.buyer_name ||
+                        "Buyer"}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>COURIER</small>
+                    {editingId ===
+                    selectedShipment.id ? (
+                      <select
+                        className="ship-inline-select"
+                        value={
+                          editForm.courier_name
+                        }
+                        onChange={(e) =>
+                          setEditForm((current) => ({
+                            ...current,
+                            courier_name:
+                              e.target.value,
+                          }))
+                        }
+                      >
+                        <option value="">
+                          Select courier
+                        </option>
+                        {COURIER_SUGGESTIONS.map(
+                          (name) => (
+                            <option
+                              key={name}
+                              value={name}
+                            >
+                              {name}
+                            </option>
+                          )
+                        )}
+                      </select>
+                    ) : (
+                      <strong>
+                        {selectedShipment.courier_name ||
+                          "—"}
+                      </strong>
+                    )}
+                  </div>
+                  <div>
+                    <small>TRACKING</small>
+                    {editingId ===
+                    selectedShipment.id ? (
+                      <input
+                        className="ship-inline-input"
+                        type="text"
+                        placeholder="Tracking no."
+                        value={
+                          editForm.tracking_number
+                        }
+                        onChange={(e) =>
+                          setEditForm((current) => ({
+                            ...current,
+                            tracking_number:
+                              e.target.value,
+                          }))
+                        }
+                      />
+                    ) : (
+                      <strong>
+                        {selectedShipment.tracking_number ||
+                          "—"}
+                      </strong>
+                    )}
+                  </div>
+                  <div>
+                    <small>ORDER STATUS</small>
+                    <strong>
+                      {selectedShipment.order_status ||
+                        "—"}
+                    </strong>
+                  </div>
+                  <div>
+                    <small>STATUS</small>
+                    {editingId ===
+                    selectedShipment.id ? (
+                      <select
+                        className="ship-inline-select"
+                        value={
+                          editForm.shipping_status
+                        }
+                        onChange={(e) =>
+                          setEditForm((current) => ({
+                            ...current,
+                            shipping_status:
+                              e.target.value,
+                          }))
+                        }
+                      >
+                        <option value="pending">
+                          pending
+                        </option>
+                        <option value="shipped">
+                          shipped
+                        </option>
+                        <option value="in_transit">
+                          in_transit
+                        </option>
+                        <option value="delivered">
+                          delivered
+                        </option>
+                        <option value="cancelled">
+                          cancelled
+                        </option>
+                      </select>
+                    ) : (
+                      <strong>
+                        {
+                          selectedShipment.shipping_status
+                        }
+                      </strong>
+                    )}
+                  </div>
+                </div>
+
+                <div className="id-details-actions">
+                  {editingId ===
+                  selectedShipment.id ? (
+                    <>
+                      <button
+                        type="button"
+                        className="ship-action-button save-button"
+                        disabled={updating}
+                        onClick={() =>
+                          handleUpdate(
+                            selectedShipment.id
+                          )
+                        }
+                      >
+                        {updating
+                          ? "Saving..."
+                          : "Save"}
+                      </button>
+                      <button
+                        type="button"
+                        className="ship-action-button cancel-button"
+                        onClick={() =>
+                          setEditingId(null)
+                        }
+                      >
+                        ✕
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        className="ship-action-button track-button"
+                        onClick={() => {
+                          setTrackingOrder(
+                            selectedShipment
+                          );
+                          setCopied(false);
+                        }}
+                      >
+                        👁 Track
+                      </button>
+                      <button
+                        type="button"
+                        className="ship-action-button handle-button"
+                        onClick={() =>
+                          startEdit(
+                            selectedShipment
+                          )
+                        }
+                      >
+                        Handle ✏️
+                      </button>
+                      {selectedShipment.shipping_status ===
+                        "pending" && (
                         <>
-                          <input
-                            className="ship-inline-input"
-                            type="text"
-                            placeholder="Courier"
-                            list="courier-suggestions"
-                            value={editForm.courier_name}
-                            onChange={(e) =>
-                              setEditForm((current) => ({
-                                ...current,
-                                courier_name: e.target.value,
-                              }))
-                            }
-                          />
-                          <datalist id="courier-suggestions">
-                            {COURIER_SUGGESTIONS.map(
-                              (name) => (
-                                <option
-                                  key={name}
-                                  value={name}
-                                />
+                          <button
+                            type="button"
+                            className="ship-action-button quick-ship-button"
+                            disabled={updating}
+                            onClick={() =>
+                              handleQuickStatus(
+                                selectedShipment,
+                                "shipped"
                               )
-                            )}
-                          </datalist>
+                            }
+                          >
+                            Ship 🚚
+                          </button>
+                          <button
+                            type="button"
+                            className="ship-action-button quick-cancel-button"
+                            disabled={updating}
+                            onClick={() =>
+                              handleQuickCancel(
+                                selectedShipment
+                              )
+                            }
+                          >
+                            Cancel ✕
+                          </button>
                         </>
-                      ) : (
-                        <span className="courier-value">
-                          {shipment.courier_name || "—"}
-                        </span>
                       )}
-                    </td>
-                    <td>
-                      {editingId === shipment.id ? (
-                        <input
-                          className="ship-inline-input"
-                          type="text"
-                          placeholder="Tracking no."
-                          value={editForm.tracking_number}
-                          onChange={(e) =>
-                            setEditForm((current) => ({
-                              ...current,
-                              tracking_number: e.target.value,
-                            }))
-                          }
-                        />
-                      ) : (
-                        <span className="tracking-value">
-                          {shipment.tracking_number || "—"}
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                      {editingId === shipment.id ? (
-                        <select
-                          className="ship-inline-select"
-                          value={editForm.shipping_status}
-                          onChange={(e) =>
-                            setEditForm((current) => ({
-                              ...current,
-                              shipping_status: e.target.value,
-                            }))
+                      {(selectedShipment.shipping_status ===
+                        "shipped" ||
+                        selectedShipment.shipping_status ===
+                          "in_transit") && (
+                        <button
+                          type="button"
+                          className="ship-action-button quick-deliver-button"
+                          disabled={updating}
+                          onClick={() =>
+                            handleQuickStatus(
+                              selectedShipment,
+                              "delivered"
+                            )
                           }
                         >
-                          <option value="pending">pending</option>
-                          <option value="shipped">shipped</option>
-                          <option value="in_transit">in_transit</option>
-                          <option value="delivered">delivered</option>
-                          <option value="cancelled">cancelled</option>
-                        </select>
-                      ) : (
-                        <span className={getStatusClass(shipment.shipping_status)}>
-                          <span className="status-dot"></span>
-                          {shipment.shipping_status}
-                        </span>
+                          Deliver ✓
+                        </button>
                       )}
-                    </td>
-                    <td>
-                      {editingId === shipment.id ? (
-                        <div className="ship-action-cell">
-                          <button
-                            type="button"
-                            className="ship-action-button save-button"
-                            disabled={updating}
-                            onClick={() => handleUpdate(shipment.id)}
-                          >
-                            {updating ? "Saving..." : "Save"}
-                          </button>
-                          <button
-                            type="button"
-                            className="ship-action-button cancel-button"
-                            onClick={() => setEditingId(null)}
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="ship-action-cell">
-                          <button
-                            type="button"
-                            className="ship-action-button track-button"
-                            onClick={() => {
-                              setTrackingOrder(shipment);
-                              setCopied(false);
-                            }}
-                          >
-                            👁 Track
-                          </button>
-                          <button
-                            type="button"
-                            className="ship-action-button handle-button"
-                            onClick={() => startEdit(shipment)}
-                          >
-                            Handle ✏️
-                          </button>
-                          {shipment.shipping_status === "pending" && (
-                            <>
-                              <button
-                                type="button"
-                                className="ship-action-button quick-ship-button"
-                                disabled={updating}
-                                onClick={() =>
-                                  handleQuickStatus(shipment, "shipped")
-                                }
-                              >
-                                Ship 🚚
-                              </button>
-                              <button
-                                type="button"
-                                className="ship-action-button quick-cancel-button"
-                                disabled={updating}
-                                onClick={() =>
-                                  handleQuickCancel(shipment)
-                                }
-                              >
-                                Cancel ✕
-                              </button>
-                            </>
-                          )}
-                          {(shipment.shipping_status === "shipped" ||
-                            shipment.shipping_status === "in_transit") && (
-                            <button
-                              type="button"
-                              className="ship-action-button quick-deliver-button"
-                              disabled={updating}
-                              onClick={() =>
-                                handleQuickStatus(shipment, "delivered")
-                              }
-                            >
-                              Deliver ✓
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </section>
 

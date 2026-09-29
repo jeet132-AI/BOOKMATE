@@ -12,6 +12,8 @@ function AdminCategories() {
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [savingId, setSavingId] = useState(null);
+  const [selectedCategoryId, setSelectedCategoryId] =
+    useState(null);
 
   const fetchCategories = async () => {
     const token = localStorage.getItem("token");
@@ -338,6 +340,16 @@ function AdminCategories() {
           .includes(searchText)
       );
     });
+
+  // Selected category for the name-button details panel.
+  // Defaults to the first visible category.
+  const selectedCategory =
+    filteredCategories.find(
+      (category) => category.id === selectedCategoryId
+    ) ||
+    filteredCategories[0] ||
+    null;
+
   return (
     <main className="ap-page">
       <section className="ap-header">
@@ -459,180 +471,182 @@ function AdminCategories() {
           </p>
         </div>
       ) : (
-        <div className="ap-table-wrapper">
-          <table className="ap-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Description</th>
-                <th>Books</th>
-                <th>Status</th>
-                <th>Created</th>
-                <th>Action</th>
-              </tr>
-            </thead>
+        <>
+          {/* Category name buttons — 5 per row */}
+          <div className="id-btn-grid">
+            {filteredCategories.map((category) => (
+              <button
+                key={category.id}
+                type="button"
+                className={
+                  selectedCategory?.id ===
+                  category.id
+                    ? "id-btn selected"
+                    : "id-btn"
+                }
+                onClick={() =>
+                  setSelectedCategoryId(category.id)
+                }
+                title={category.name}
+                aria-label={`Category ${category.name} details`}
+              >
+                {category.name}
+              </button>
+            ))}
+          </div>
 
-            <tbody>
-              {filteredCategories.map(
-                (category) => (
-                  <tr key={category.id}>
-                    <td>
-                      <strong>
-                        #{category.id}
-                      </strong>
-                    </td>
+          {/* Selected category details */}
+          {selectedCategory && (
+            <div className="id-details-panel">
+              <div className="id-details-panel-heading">
+                <strong>
+                  🗂️ #{selectedCategory.id} —{" "}
+                  {editingId ===
+                  selectedCategory.id ? (
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={(e) =>
+                        setEditName(
+                          e.target.value
+                        )
+                      }
+                      className="ap-inline-input"
+                    />
+                  ) : (
+                    selectedCategory.name
+                  )}
+                </strong>
 
-                    <td>
-                      {editingId ===
-                      category.id ? (
-                        <input
-                          type="text"
-                          value={editName}
-                          onChange={(e) =>
-                            setEditName(
-                              e.target.value
-                            )
-                          }
-                          className="ap-inline-input"
-                        />
-                      ) : (
-                        <strong>
-                          {category.name}
-                        </strong>
-                      )}
-                    </td>
+                <span
+                  className={
+                    selectedCategory.is_active
+                      ? "ap-badge ap-badge-active"
+                      : "ap-badge ap-badge-inactive"
+                  }
+                >
+                  {selectedCategory.is_active
+                    ? "Active"
+                    : "Inactive"}
+                </span>
+              </div>
 
-                    <td>
-                      {editingId ===
-                      category.id ? (
-                        <input
-                          type="text"
-                          value={editDescription}
-                          onChange={(e) =>
-                            setEditDescription(
-                              e.target.value
-                            )
-                          }
-                          className="ap-inline-input"
-                        />
-                      ) : (
-                        <small>
-                          {category.description ||
-                            "No description"}
-                        </small>
-                      )}
-                    </td>
+              <div className="id-details-grid">
+                <div>
+                  <small>DESCRIPTION</small>
+                  {editingId ===
+                  selectedCategory.id ? (
+                    <input
+                      type="text"
+                      value={editDescription}
+                      onChange={(e) =>
+                        setEditDescription(
+                          e.target.value
+                        )
+                      }
+                      className="ap-inline-input"
+                    />
+                  ) : (
+                    <strong>
+                      {selectedCategory.description ||
+                        "No description"}
+                    </strong>
+                  )}
+                </div>
+                <div>
+                  <small>BOOKS</small>
+                  <strong>
+                    {selectedCategory.book_count ??
+                      0}
+                  </strong>
+                </div>
+                <div>
+                  <small>CREATED</small>
+                  <strong>
+                    {new Date(
+                      selectedCategory.created_at
+                    ).toLocaleString()}
+                  </strong>
+                </div>
+              </div>
 
-                    <td>
-                      <strong>
-                        {category.book_count ??
-                          0}
-                      </strong>
-                    </td>
-
-                    <td>
-                      <span
-                        className={
-                          category.is_active
-                            ? "ap-badge ap-badge-active"
-                            : "ap-badge ap-badge-inactive"
-                        }
-                      >
-                        {category.is_active
-                          ? "Active"
-                          : "Inactive"}
-                      </span>
-                    </td>
-
-                    <td>
-                      <small>
-                        {new Date(
-                          category.created_at
-                        ).toLocaleString()}
-                      </small>
-                    </td>
-
-                    <td>
-                      {editingId ===
-                      category.id ? (
-                        <div className="ap-actions">
-                          <button
-                            type="button"
-                            className="ap-btn ap-btn-primary ap-btn-sm"
-                            disabled={
-                              savingId ===
-                              category.id
-                            }
-                            onClick={() =>
-                              handleUpdateCategory(
-                                category.id
-                              )
-                            }
-                          >
-                            {savingId ===
-                            category.id
-                              ? "Saving..."
-                              : "Save"}
-                          </button>
-                          <button
-                            type="button"
-                            className="ap-btn ap-btn-ghost ap-btn-sm"
-                            onClick={() =>
-                              setEditingId(null)
-                            }
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="ap-actions">
-                          <button
-                            type="button"
-                            className="ap-btn ap-btn-info ap-btn-sm"
-                            onClick={() =>
-                              startEdit(category)
-                            }
-                          >
-                            ✏️ Edit
-                          </button>
-                          <button
-                            type="button"
-                            className="ap-btn ap-btn-ghost ap-btn-sm"
-                            disabled={
-                              savingId ===
-                              category.id
-                            }
-                            onClick={() =>
-                              handleToggleActive(
-                                category
-                              )
-                            }
-                          >
-                            {category.is_active
-                              ? "⏸️ Off"
-                              : "✅ On"}
-                          </button>
-                          <button
-                            type="button"
-                            className="ap-btn ap-btn-danger ap-btn-sm"
-                            onClick={() =>
-                              handleDeleteCategory(
-                                category.id
-                              )
-                            }
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                )
-              )}
-            </tbody>
-          </table>
-        </div>
+              <div className="id-details-actions">
+                {editingId ===
+                selectedCategory.id ? (
+                  <>
+                    <button
+                      type="button"
+                      className="ap-btn ap-btn-primary ap-btn-sm"
+                      disabled={
+                        savingId ===
+                        selectedCategory.id
+                      }
+                      onClick={() =>
+                        handleUpdateCategory(
+                          selectedCategory.id
+                        )
+                      }
+                    >
+                      {savingId ===
+                      selectedCategory.id
+                        ? "Saving..."
+                        : "Save"}
+                    </button>
+                    <button
+                      type="button"
+                      className="ap-btn ap-btn-ghost ap-btn-sm"
+                      onClick={() =>
+                        setEditingId(null)
+                      }
+                    >
+                      ✕
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="ap-btn ap-btn-info ap-btn-sm"
+                      onClick={() =>
+                        startEdit(selectedCategory)
+                      }
+                    >
+                      ✏️ Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="ap-btn ap-btn-ghost ap-btn-sm"
+                      disabled={
+                        savingId ===
+                        selectedCategory.id
+                      }
+                      onClick={() =>
+                        handleToggleActive(
+                          selectedCategory
+                        )
+                      }
+                    >
+                      {selectedCategory.is_active
+                        ? "⏸️ Off"
+                        : "✅ On"}
+                    </button>
+                    <button
+                      type="button"
+                      className="ap-btn ap-btn-danger ap-btn-sm"
+                      onClick={() =>
+                        handleDeleteCategory(
+                          selectedCategory.id
+                        )
+                      }
+                    >
+                      Delete
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </main>
   );

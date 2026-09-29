@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { bookImageUrl } from "../utils/bookImage";
+import { buildTrackingUrl } from "../config/couriers";
 import "./Orders.css";
 
 function Orders() {
@@ -390,6 +391,11 @@ function Orders() {
                             {order.payment_method}
                             {order.payment_status === "paid" &&
                               " • ✅ Paid"}
+                            {order.payment_status !==
+                              "paid" &&
+                              order.payment_method ===
+                                "Cash on Delivery" &&
+                              " • ⏳ Pay cash on delivery"}
                             {order.transaction_id &&
                               ` • UTR ${order.transaction_id}`}
                           </p>
@@ -456,6 +462,44 @@ function Orders() {
                             {order.shipped_at ? ` Shipped on ${new Date(order.shipped_at).toLocaleString()}.` : ""}</>
                           )}
                         </p>
+                        {order.courier_name && (
+                          <p className="order-courier-line">
+                            Courier:{" "}
+                            <strong>
+                              {order.courier_name}
+                            </strong>
+                          </p>
+                        )}
+                        {order.tracking_number && (
+                          <p className="order-courier-line">
+                            Tracking ID:{" "}
+                            <strong>
+                              {order.tracking_number}
+                            </strong>
+                          </p>
+                        )}
+                        {order.tracking_number &&
+                          buildTrackingUrl(
+                            order.courier_name,
+                            order.tracking_number
+                          ) && (
+                            <a
+                              href={buildTrackingUrl(
+                                order.courier_name,
+                                order.tracking_number
+                              )}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <button
+                                type="button"
+                                className="track-order-button"
+                              >
+                                📍 Track Order
+                                <span>↗</span>
+                              </button>
+                            </a>
+                          )}
                       </div>
                     </div>
                   )}

@@ -43,8 +43,11 @@ function Navbar() {
         to="/"
         className="navbar-logo"
         onClick={closeMenu}
+        aria-label="Used Book Market - Home"
       >
-        USED BOOK MARKET
+        <span className="logo-word logo-word-1">USED</span>{" "}
+        <span className="logo-word logo-word-2">BOOK</span>{" "}
+        <span className="logo-word logo-word-3">MARKET</span>
       </NavLink>
 
       <button
